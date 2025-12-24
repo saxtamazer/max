@@ -1,0 +1,1399 @@
+=================================================================
+== FILE: /srv/max/cmd/bot/main.go
+== DESC: Главный файл Go-бота
+=================================================================
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"sync"
+	"syscall"
+	"time"
+
+	"github.com/joho/godotenv"
+	maxbot "github.com/max-messenger/max-bot-api-client-go"
+	"github.com/max-messenger/max-bot-api-client-go/schemes"
+)
+
+// --- Глобальная и потокобезопасная "база данных" для хранения ID чатов ---
+var (
+	userChats   = make(map[int64]bool)
+	userChatsMu sync.Mutex
+)
+
+// PollForNotify - структура для получения данных об опросах от Django
+type PollForNotify struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+}
+
+// --- Фоновая задача для проверки новых опросов ---
+func pollChecker(ctx context.Context, api *maxbot.API, notifyURL string) {
+	if notifyURL == "" {
+		log.Println("URL для проверки опросов не задан. Функция pollChecker отключена.")
+		return
+	}
+	// Запускаем первую проверку через 1 минуту после старта, а затем по тикеру
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	log.Println("Запущена фоновая проверка новых опросов...")
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Println("Проверка наличия новых опросов для анонса...")
+
+			// 1. Делаем GET-запрос к Django API, чтобы получить список опросов для анонса
+			resp, err := http.Get(notifyURL)
+			if err != nil {
+				log.Printf("Ошибка при запросе к API опросов: %v", err)
+				continue
+			}
+			defer resp.Body.Close()
+
+			var pollsToNotify []PollForNotify
+			if err := json.NewDecoder(resp.Body).Decode(&pollsToNotify); err != nil {
+				log.Printf("Ошибка декодирования ответа от API опросов: %v", err)
+				continue
+			}
+
+			if len(pollsToNotify) == 0 {
+				log.Println("Новых опросов для анонса нет.")
+				continue
+			}
+
+			// 2. Если есть новые опросы, рассылаем уведомления
+			userChatsMu.Lock()
+			for chatID := range userChats {
+				for _, poll := range pollsToNotify {
+					log.Printf("Отправка анонса опроса '%s' в чат %d", poll.Title, chatID)
+					text := "📢 Новый опрос!\n\n📄 " + poll.Title + "\n\nПримите участие, ваше мнение важно!"
+					
+					// Создаем кнопку, ведущую на страницу опросов в Mini App
+					botUsername := os.Getenv("BOT_USERNAME") // Получаем имя бота для ссылки
+					miniAppPollsURL := "https://max.ru/" + botUsername + "?startapp=polls" // Добавляем параметр, чтобы открыть нужную вкладку
+					keyboard := api.Messages.NewKeyboardBuilder()
+					keyboard.AddRow().AddLink("✅ Пройти опрос", schemes.POSITIVE, miniAppPollsURL)
+
+					msg := maxbot.NewMessage().SetChat(chatID).SetText(text).AddKeyboard(keyboard)
+					api.Messages.Send(ctx, msg)
+				}
+			}
+			userChatsMu.Unlock()
+
+			// 3. Отмечаем опросы как анонсированные
+			for _, poll := range pollsToNotify {
+				postBody, _ := json.Marshal(map[string]int{"id": poll.ID})
+				http.Post(notifyURL, "application/json", bytes.NewBuffer(postBody))
+				log.Printf("Опрос с ID %d отмечен как анонсированный.", poll.ID)
+			}
+
+		case <-ctx.Done():
+			log.Println("Остановка проверки опросов.")
+			return
+		}
+	}
+}
+
+func main() {
+	// --- ШАГ 1: ЗАГРУЗКА КОНФИГУРАЦИИ ---
+	log.Println("Загрузка конфигурации...")
+	envPath, _ := filepath.Abs("./.env")
+	if err := godotenv.Load(envPath); err != nil {
+		log.Fatalf("Ошибка загрузки .env файла: %v", err)
+	}
+	botToken := os.Getenv("BOT_TOKEN")
+	apiNotifyURL := os.Getenv("API_NOTIFY_URL")
+
+	if botToken == "" {
+		log.Fatal("Токен бота не найден. Проверьте переменную BOT_TOKEN.")
+	}
+
+	// --- ШАГ 2: ИНИЦИАЛИЗАЦИЯ API И ПРОВЕРКА ТОКЕНА ---
+	api, err := maxbot.New(botToken)
+	if err != nil {
+		log.Fatalf("Ошибка создания API клиента: %v", err)
+	}
+
+	ctx := context.Background()
+
+	info, err := api.Bots.GetBot(ctx)
+	if err != nil {
+		log.Fatalf("Ошибка при проверке токена: %v. Убедитесь, что токен верный и бот прошел модерацию.", err)
+	}
+	log.Printf("Бот успешно авторизован: %s (ID: %d)", info.Name, info.UserId)
+	// Сохраняем имя пользователя бота в переменные окружения для использования в ссылках
+	os.Setenv("BOT_USERNAME", info.Username)
+
+	// --- ШАГ 3: НАСТРОЙКА ГРАЦИОЗНОГО ЗАВЕРШЕНИЯ ---
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		exit := make(chan os.Signal, 1)
+		signal.Notify(exit, syscall.SIGTERM, os.Interrupt)
+		<-exit
+		log.Println("Получен сигнал завершения, остановка...")
+		cancel()
+	}()
+	
+	// --- Запускаем фоновую проверку опросов ---
+	go pollChecker(ctx, api, apiNotifyURL)
+
+	// --- ШАГ 4: ГЛАВНЫЙ ЦИКЛ ОБРАБОТКИ СОБЫТИЙ ---
+	log.Println("Запуск прослушивания обновлений...")
+	for upd := range api.GetUpdates(ctx) {
+		switch u := upd.(type) {
+		
+		case *schemes.MessageCallbackUpdate:
+			chatID := u.Message.Recipient.ChatId
+			userChatsMu.Lock()
+			userChats[chatID] = true // Запоминаем пользователя
+			userChatsMu.Unlock()
+			// ... остальная логика callback ...
+			api.Messages.Send(ctx, maxbot.NewMessage().SetChat(chatID).SetText("Эта кнопка больше не используется. Введите /start."))
+
+		case *schemes.MessageCreatedUpdate:
+			chatID := u.Message.Recipient.ChatId
+			userChatsMu.Lock()
+			userChats[chatID] = true // Запоминаем каждого, кто пишет боту
+			userChatsMu.Unlock()
+
+			command := u.GetCommand()
+			log.Printf("Получена команда '%s' от чата %d", command, chatID)
+
+			switch command {
+			case "/start":
+				botUsername := info.Username 
+				miniAppLaunchURL := "https://max.ru/" + botUsername + "?startapp"
+
+				keyboard := api.Messages.NewKeyboardBuilder()
+				keyboard.AddRow().AddLink("🚀 Открыть Цифровой Ассистент", schemes.POSITIVE, miniAppLaunchURL)
+				
+				text := "Здравствуйте!\n\nЯ — Цифровой ассистент Тимирязевской академии.\n\nНажмите на кнопку ниже, чтобы запустить все сервисы:"
+				msg := maxbot.NewMessage().SetChat(chatID).SetText(text).AddKeyboard(keyboard)
+				
+				_, err := api.Messages.Send(ctx, msg)
+				if err != nil {
+					log.Printf("Ошибка отправки /start с клавиатурой: %v", err)
+				}
+			case "/help":
+				text := "Этот бот предназначен для информирования студентов и сотрудников.\n\n" +
+					"Используйте команду /start, чтобы получить кнопку для запуска мини-приложения."
+				api.Messages.Send(ctx, maxbot.NewMessage().SetChat(chatID).SetText(text))
+			default:
+				log.Printf("Получен текст: '%s' от чата %d", u.GetText(), chatID)
+				text := "Неизвестная команда. Введите /start для запуска."
+				api.Messages.Send(ctx, maxbot.NewMessage().SetChat(chatID).SetText(text))
+			}
+		}
+	}
+	log.Println("Бот остановлен.")
+}
+
+
+=================================================================
+== FILE: /srv/max/go.mod
+== DESC: Зависимости Go-бота
+=================================================================
+module timbot
+
+go 1.23.4
+
+toolchain go1.24.10
+
+require (
+	github.com/joho/godotenv v1.5.1
+	github.com/max-messenger/max-bot-api-client-go v1.0.3
+)
+
+require (
+	github.com/caarlos0/env/v6 v6.10.1 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/rs/zerolog v1.34.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
+)
+
+
+
+=================================================================
+== COMMAND: echo 'BOT_TOKEN="YOUR_SECRET_TOKEN_HERE"'
+== DESC: Шаблон .env файла для Go-бота
+=================================================================
+BOT_TOKEN="YOUR_SECRET_TOKEN_HERE"
+
+
+
+=================================================================
+== FILE: /etc/systemd/system/timbot.service
+== DESC: Systemd сервис для Go-бота
+=================================================================
+[Unit]
+Description=Timiryazevka Go Bot for MAX Messenger
+After=network.target
+
+[Service]
+# Запускаем от имени root, как и обсуждали
+User=root
+Group=root
+
+# Полный путь к корневой папке проекта Go-бота
+WorkingDirectory=/srv/max
+
+# Полный путь к скомпилированному файлу
+ExecStart=/srv/max/bin/timbot
+
+# Всегда перезапускать в случае сбоя
+Restart=always
+RestartSec=10
+
+# Направлять весь вывод (логи) в системный журнал
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/backend_core/settings.py
+== DESC: Главные настройки Django
+=================================================================
+"""
+Django settings for backend_core project.
+
+Generated by 'django-admin startproject' using Django 5.2.8.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/5.2/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/5.2/ref/settings/
+"""
+
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'django-insecure-hn8%y!ng-50wm%x^zwn^frw@fflm46)#mj2uce3#gu4v!0nvi+'
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = ['макс.тимакад.рф', 'xn--80auew.xn--80aamnlk4b.xn--p1ai']
+
+
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    # --- Сторонние библиотеки ---
+    'rest_framework',
+    'corsheaders',
+    'tinymce',
+    'import_export',  # <<< ДОБАВЬТЕ ЭТУ СТРОКУ
+
+    # --- Ваши приложения ---
+    'api',
+    'knowledge_base',
+    'polls',
+    'schedule',
+]
+
+TINYMCE_DEFAULT_CONFIG = {
+    "height": "320px",
+    "width": "960px",
+    "menubar": "file edit view insert format tools table help",
+    "plugins": "advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code "
+               "fullscreen insertdatetime media table paste code help wordcount spellchecker",
+    "toolbar": "undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft "
+               "aligncenter alignright alignjustify | outdent indent |  numlist bullist checklist | forecolor "
+               "backcolor casechange permanentpen formatpainter removeformat | pagebreak | charmap emoticons | "
+               "fullscreen  preview save print | insertfile image media pageembed template link anchor codesample | "
+               "a11ycheck ltr rtl | showcomments addcomment code",
+    "custom_undo_redo_levels": 10,
+}
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'backend_core.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'backend_core.wsgi.application'
+
+
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'max_app_db',
+        'USER': 'max_app_user',
+        'PASSWORD': '9923DLEIWAN2002q',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+
+
+# Password validation
+# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+
+# Internationalization
+# https://docs.djangoproject.com/en/5.2/topics/i18n/
+
+LANGUAGE_CODE = 'en-us'
+
+TIME_ZONE = 'UTC'
+
+USE_I18N = True
+
+USE_TZ = True
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.2/howto/static-files/
+
+STATIC_URL = '/django-static/'
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# В самый конец файла settings.py
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+}
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/backend_core/urls.py
+== DESC: Главный файл URL-адресов Django
+=================================================================
+from django.contrib import admin # Эта строка должна быть
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/v1/', include('api.urls')),
+    path('tinymce/', include('tinymce.urls')),
+]
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/api/urls.py
+== DESC: URL-адреса приложения API
+=================================================================
+# api/urls.py
+from django.urls import path, include
+
+urlpatterns = [
+    path('kb/', include('knowledge_base.urls')),
+    path('polls/', include('polls.urls')),
+    path('schedule/', include('schedule.urls')), # Добавляем эту строку
+]
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/knowledge_base/models.py
+== DESC: Модель данных 'Статья'
+=================================================================
+# knowledge_base/models.py
+
+from django.db import models
+from tinymce.models import HTMLField
+
+class Article(models.Model):
+    title = models.CharField(max_length=255, verbose_name="Заголовок")
+    content = HTMLField(verbose_name="Содержимое")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Статья"
+        verbose_name_plural = "Статьи"
+        ordering = ['-created_at']
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/knowledge_base/admin.py
+== DESC: Регистрация модели в админке
+=================================================================
+# knowledge_base/admin.py
+
+from django.contrib import admin
+from .models import Article
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_at', 'updated_at')
+    search_fields = ('title', 'content')
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/knowledge_base/serializers.py
+== DESC: Сериализаторы для API
+=================================================================
+# knowledge_base/serializers.py
+
+from rest_framework import serializers
+from .models import Article
+
+class ArticleListSerializer(serializers.ModelSerializer):
+    # Урезанный сериализатор для списка статей
+    class Meta:
+        model = Article
+        fields = ['id', 'title', 'created_at']
+
+class ArticleDetailSerializer(serializers.ModelSerializer):
+    # Полный сериализатор для одной статьи
+    class Meta:
+        model = Article
+        fields = '__all__'
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/knowledge_base/views.py
+== DESC: Контроллеры API (views)
+=================================================================
+# knowledge_base/views.py
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Article
+from .serializers import ArticleListSerializer, ArticleDetailSerializer
+
+@api_view(['GET'])
+def article_list(request):
+    """Возвращает список всех статей (только заголовки)."""
+    articles = Article.objects.all()
+    serializer = ArticleListSerializer(articles, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def article_detail(request, pk):
+    """Возвращает одну статью по ее ID."""
+    try:
+        article = Article.objects.get(pk=pk)
+        serializer = ArticleDetailSerializer(article)
+        return Response(serializer.data)
+    except Article.DoesNotExist:
+        return Response(status=404)
+
+
+=================================================================
+== FILE: /srv/max-mini-app/backend/knowledge_base/urls.py
+== DESC: URL-адреса приложения 'База знаний'
+=================================================================
+# knowledge_base/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('articles/', views.article_list),
+    path('articles/<int:pk>/', views.article_detail),
+]
+
+
+=================================================================
+== FILE: /etc/systemd/system/timbot-app.service
+== DESC: Systemd сервис для Gunicorn/Django
+=================================================================
+[Unit]
+Description=gunicorn daemon for timbot-app
+Requires=timbot-app.socket
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+
+# Путь к папке с manage.py
+WorkingDirectory=/srv/max-mini-app/backend
+
+# Команда для запуска. Обратите внимание на путь к gunicorn внутри venv
+ExecStart=/srv/max-mini-app/backend/venv/bin/gunicorn \
+          --access-logfile - \
+          --workers 3 \
+          --bind unix:/run/timbot-app.sock \
+          backend_core.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+=================================================================
+== FILE: /etc/systemd/system/timbot-app.socket
+== DESC: Systemd сокет для Gunicorn/Django
+=================================================================
+[Unit]
+Description=gunicorn socket for timbot-app
+
+[Socket]
+ListenStream=/run/timbot-app.sock
+
+[Install]
+WantedBy=sockets.target
+
+
+
+=================================================================
+== COMMAND: "/srv/max-mini-app/backend/venv/bin/pip" freeze
+== DESC: Зависимости Python (pip freeze)
+=================================================================
+asgiref==3.10.0
+diff-match-patch==20241021
+Django==5.2.8
+django-cors-headers==4.9.0
+django-import-export==4.3.14
+django-tinymce==5.0.0
+djangorestframework==3.16.1
+gunicorn==23.0.0
+packaging==25.0
+psycopg2-binary==2.9.11
+sqlparse==0.5.3
+tablib==3.9.0
+typing_extensions==4.15.0
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/package.json
+== DESC: Зависимости и скрипты Frontend
+=================================================================
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/list": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.126",
+    "@types/react": "^19.2.4",
+    "@types/react-dom": "^19.2.3",
+    "add-to-calendar-button": "^2.13.0",
+    "axios": "^1.13.2",
+    "liquid-glass-react": "^1.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18"
+  }
+}
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/tailwind.config.js
+== DESC: Конфигурация Tailwind CSS
+=================================================================
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}", // ← ЭТО ГЛАВНОЕ! Сканируем все файлы React
+    "./public/index.html",
+  ],
+  theme: {
+    extend: {
+      backgroundImage: {
+        'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22 opacity=%220.06%22/%3E%3C/svg%3E')",
+      },
+    },
+  },
+  plugins: [],
+}
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/postcss.config.js
+== DESC: Конфигурация PostCSS
+=================================================================
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/index.tsx
+== DESC: Точка входа React
+=================================================================
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/App.tsx
+== DESC: Главный компонент и роутер
+=================================================================
+// src/App.tsx
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { theme } from './theme'; // Наша новая тема
+import { MainLayout } from './layouts/MainLayout'; // Наш новый лейаут
+import { ArticleListPage } from './pages/ArticleListPage';
+import { ArticleDetailPage } from './pages/ArticleDetailPage';
+import { SchedulePage } from './pages/SchedulePage';
+import { PollsPage } from './pages/PollsPage';
+import { ManageSchedulePage } from './pages/ManageSchedulePage';
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        {/* ИСПРАВЛЕНИЕ: Все <Route> теперь находятся внутри <Routes> */}
+        <Routes>
+          {/* 
+            Этот Route с элементом MainLayout действует как "обертка".
+            Все вложенные в него Route будут отрендерены внутри MainLayout.
+          */}
+          <Route path="/" element={<MainLayout />}>
+            {/* `index` означает, что этот компонент будет показан для пути "/" */}
+            <Route index element={<ArticleListPage />} /> 
+            <Route path="schedule" element={<SchedulePage />} />
+            <Route path="polls" element={<PollsPage />} />
+            <Route path="article/:id" element={<ArticleDetailPage />} />
+            <Route path="manage/schedule" element={<ManageSchedulePage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
+
+export default App;
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/theme.ts
+== DESC: Тема Material UI
+=================================================================
+// src/theme.ts
+import { createTheme } from '@mui/material/styles';
+
+export const theme = createTheme({
+  palette: {
+    mode: 'light', // Можете поменять на 'dark' для темной темы
+    primary: {
+      main: '#006400', // Классический темно-зеленый цвет
+    },
+    secondary: {
+      main: '#f57c00', // Акцентный оранжевый, хорошо сочетается с зеленым
+    },
+    background: {
+      default: '#f4f6f8', // Слегка серый фон, приятнее чисто-белого
+      paper: '#ffffff',
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+    h4: {
+      fontWeight: 700,
+    },
+    h5: {
+      fontWeight: 600,
+    },
+  },
+  components: {
+    // Добавим скругления для кнопок и карточек
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 8,
+          },
+        },
+      },
+  },
+});
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/layouts/MainLayout.tsx
+== DESC: Главный лейаут с навигацией
+=================================================================
+// src/layouts/MainLayout.tsx
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Box, Paper, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import ArticleIcon from '@mui/icons-material/Article';
+import EventIcon from '@mui/icons-material/Event';
+import PollIcon from '@mui/icons-material/Poll';
+
+export const MainLayout: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [value, setValue] = useState(location.pathname);
+
+    // Синхронизируем активную вкладку с текущим URL
+    useEffect(() => {
+        setValue(location.pathname);
+    }, [location.pathname]);
+
+    return (
+        <Box sx={{ pb: 7 }}> {/* Добавляем отступ снизу, равный высоте панели */}
+            
+            {/* Здесь будут отображаться наши страницы */}
+            <Outlet />
+
+            <Paper 
+                sx={{ 
+                    position: 'fixed', 
+                    bottom: 0, 
+                    left: 0, 
+                    right: 0,
+                    // --- Стили для эффекта "Liquid Glass" ---
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Полупрозрачный фон
+                    backdropFilter: 'blur(10px)', // Размытие
+                    WebkitBackdropFilter: 'blur(10px)', // Для Safari
+                    borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                }} 
+                elevation={3}
+            >
+                <BottomNavigation
+                    showLabels
+                    value={value}
+                    onChange={(event, newValue) => {
+                        navigate(newValue);
+                    }}
+                    sx={{ backgroundColor: 'transparent' }} // делаем фон самой навигации прозрачным
+                >
+                    <BottomNavigationAction label="База знаний" value="/" icon={<ArticleIcon />} />
+                    <BottomNavigationAction label="Расписание" value="/schedule" icon={<EventIcon />} />
+                    <BottomNavigationAction label="Опросы" value="/polls" icon={<PollIcon />} />
+                </BottomNavigation>
+            </Paper>
+        </Box>
+    );
+};
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/pages/ArticleListPage.tsx
+== DESC: Страница списка статей
+=================================================================
+// src/pages/ArticleListPage.tsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Link as RouterLink } from 'react-router-dom';
+import { Container, Typography, List, ListItem, ListItemText, CircularProgress, Box, ListItemButton, Paper } from '@mui/material';
+
+// Описываем, как выглядят данные статьи в списке (для TypeScript)
+interface ArticleListItem {
+    id: number;
+    title: string;
+    created_at: string;
+}
+
+export const ArticleListPage: React.FC = () => {
+    const [articles, setArticles] = useState<ArticleListItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    // Этот хук выполнится один раз при загрузке компонента
+    useEffect(() => {
+        // Делаем GET-запрос к нашему Django API
+        axios.get('/api/v1/kb/articles/')
+            .then(response => {
+                setArticles(response.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error("There was an error fetching the articles!", error);
+                setLoading(false);
+            });
+    }, []); // Пустой массив зависимостей означает "выполнить один раз"
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    return (
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom color="primary">
+                База знаний
+            </Typography>
+            <Paper elevation={2}>
+                <List>
+                    {articles.length > 0 ? articles.map(article => (
+                        <ListItem key={article.id} disablePadding>
+                            <ListItemButton component={RouterLink} to={`/article/${article.id}`}>
+                                <ListItemText 
+                                    primary={article.title} 
+                                    secondary={`Опубликовано: ${new Date(article.created_at).toLocaleDateString()}`} 
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    )) : (
+                        <ListItem>
+                            <ListItemText primary="Пока здесь нет ни одной статьи." />
+                        </ListItem>
+                    )}
+                </List>
+            </Paper>
+        </Container>
+    );
+};
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/pages/ArticleDetailPage.tsx
+== DESC: Страница просмотра статьи
+=================================================================
+// src/pages/ArticleDetailPage.tsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams, Link as RouterLink } from 'react-router-dom';
+import { Container, Typography, Paper, CircularProgress, Box, Button } from '@mui/material';
+
+interface ArticleDetail {
+    id: number;
+    title: string;
+    content: string; // Это будет HTML-строка от TinyMCE
+}
+
+export const ArticleDetailPage: React.FC = () => {
+    const [article, setArticle] = useState<ArticleDetail | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const { id } = useParams<{ id: string }>(); // Получаем ID из URL
+
+    useEffect(() => {
+        if (id) {
+            axios.get(`/api/v1/kb/articles/${id}/`)
+                .then(response => {
+                    setArticle(response.data);
+                    setLoading(false);
+                })
+                .catch(error => {
+                    console.error(`There was an error fetching the article with id ${id}!`, error);
+                    setLoading(false);
+                });
+        }
+    }, [id]); // Перезапускаем эффект, если ID изменился
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (!article) {
+        return (
+            <Container maxWidth="md" sx={{ py: 4, textAlign: 'center' }}>
+                <Typography variant="h5">Статья не найдена.</Typography>
+                <Button component={RouterLink} to="/" variant="contained" sx={{ mt: 2 }}>
+                    Вернуться к списку
+                </Button>
+            </Container>
+        );
+    }
+
+    return (
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Button component={RouterLink} to="/" variant="outlined" sx={{ mb: 2 }}>
+                &larr; Назад к списку
+            </Button>
+            <Paper elevation={3} sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+                <Typography variant="h4" component="h1" gutterBottom color="primary">
+                    {article.title}
+                </Typography>
+                {/* 
+                  ВАЖНО: Отображаем HTML-контент из админки. 
+                  Это безопасно, так как контент создается нами. 
+                  Никогда не используйте это для данных от пользователей!
+                */}
+                <Typography component="div" sx={{ 
+                    mt: 2, 
+                    '& p': { mb: 1.5 }, // Добавляем отступы между параграфами
+                    '& h1, & h2, & h3': { mt: 2.5, mb: 1, fontWeight: 'bold' }, // Стили для заголовков
+                    '& a': { color: 'primary.main', textDecoration: 'underline' }, // Стили для ссылок
+                    '& ul, & ol': { pl: 2.5 }, // Отступы для списков
+                    '& blockquote': { borderLeft: 4, borderColor: 'grey.300', pl: 2, fontStyle: 'italic' } // Стили для цитат
+                }}>
+                    <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                </Typography>
+            </Paper>
+        </Container>
+    );
+};
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/pages/SchedulePage.tsx
+== DESC: Страница-заглушка 'Расписание'
+=================================================================
+// src/pages/SchedulePage.tsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Container, Typography, CircularProgress, Box, Paper } from '@mui/material';
+
+import FullCalendar from '@fullcalendar/react';
+import listPlugin from '@fullcalendar/list';
+import { EventContentArg } from '@fullcalendar/core';
+
+// Просто импортируем, чтобы зарегистрировать веб-компонент в браузере.
+// Типы мы описали в global.d.ts
+import 'add-to-calendar-button';
+
+interface CalendarEvent {
+    title: string;
+    start: string;
+    end: string;
+    extendedProps: {
+        teacher: string;
+        room: string;
+    }
+}
+
+export const SchedulePage: React.FC = () => {
+    const [events, setEvents] = useState<CalendarEvent[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        axios.get('/api/v1/schedule/view/')
+            .then(response => {
+                const formattedEvents = response.data.map((event: any) => ({
+                    title: event.subject,
+                    start: event.start_time,
+                    end: event.end_time,
+                    extendedProps: {
+                        teacher: event.teacher,
+                        room: event.room,
+                    }
+                }));
+                setEvents(formattedEvents);
+            })
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) {
+        return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+    }
+
+    return (
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom color="primary">
+                Расписание занятий
+            </Typography>
+            <Paper elevation={2} sx={{ p: 2 }}>
+                <FullCalendar
+                    plugins={[listPlugin]}
+                    initialView="listWeek"
+                    headerToolbar={false}
+                    locale="ru"
+                    events={events}
+                    noEventsText="На этой неделе занятий нет"
+                    eventContent={(eventInfo: EventContentArg) => (
+                        <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', py: 1 }}>
+                            <Box sx={{ flexGrow: 1 }}>
+                                <Typography variant="body1" fontWeight="bold">{eventInfo.event.title}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {eventInfo.event.extendedProps.teacher as string}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Аудитория: {eventInfo.event.extendedProps.room as string}
+                                </Typography>
+                            </Box>
+                            <add-to-calendar-button
+                                name={eventInfo.event.title}
+                                startDate={eventInfo.event.startStr.substring(0, 10)}
+                                startTime={eventInfo.event.startStr.substring(11, 16)}
+                                endTime={eventInfo.event.endStr.substring(11, 16)}
+                                timeZone="Europe/Moscow"
+                                location={eventInfo.event.extendedProps.room as string}
+                                options="'Apple','Google','iCal'"
+                                light
+                                buttonStyle="round"
+                            />
+                        </Box>
+                    )}
+                />
+            </Paper>
+        </Container>
+    );
+};
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/src/pages/PollsPage.tsx
+== DESC: Страница-заглушка 'Опросы'
+=================================================================
+// src/pages/PollsPage.tsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Container, Typography, CircularProgress, Box, Paper, Accordion, AccordionSummary, AccordionDetails, RadioGroup, FormControlLabel, Radio, Button } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+// ... (здесь будут интерфейсы для Poll, Question, Choice) ...
+
+export const PollsPage: React.FC = () => {
+    const [polls, setPolls] = useState<any[]>([]); // Замените any на интерфейсы
+    const [loading, setLoading] = useState(true);
+
+    const fetchPolls = () => {
+        axios.get('/api/v1/polls/')
+            .then(res => setPolls(res.data))
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(fetchPolls, []);
+    
+    const handleVote = (choiceId: number) => {
+        axios.post(`/api/v1/polls/choices/${choiceId}/vote/`)
+            .then(res => {
+                // Обновляем состояние опросов, чтобы показать новые результаты
+                fetchPolls();
+            })
+            .catch(err => console.error("Voting error:", err));
+    };
+
+    if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+
+    return (
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom color="primary">
+                Опросы и голосования
+            </Typography>
+            {polls.length === 0 ? (
+                <Typography>Активных опросов нет.</Typography>
+            ) : (
+                polls.map(poll => (
+                    <Paper key={poll.id} elevation={2} sx={{ mb: 2 }}>
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Typography variant="h6">{poll.title}</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Typography paragraph>{poll.description}</Typography>
+                                {poll.questions.map((q: any) => (
+                                    <div key={q.id}>
+                                        <Typography variant="subtitle1" sx={{ mt: 1, fontWeight: 'bold' }}>{q.text}</Typography>
+                                        {/* Здесь будет логика голосования */}
+                                        {q.choices.map((c: any) => (
+                                             <Box key={c.id} display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography>{c.text}</Typography>
+                                                <Box display="flex" alignItems="center">
+                                                    <Typography sx={{ mr: 2 }}>{c.votes} голосов</Typography>
+                                                    <Button size="small" variant="outlined" onClick={() => handleVote(c.id)}>Голосовать</Button>
+                                                </Box>
+                                             </Box>
+                                        ))}
+                                    </div>
+                                ))}
+                            </AccordionDetails>
+                        </Accordion>
+                    </Paper>
+                ))
+            )}
+        </Container>
+    );
+};
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/public/index.html
+== DESC: Главный HTML-файл фронтенда
+=================================================================
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>
+
+
+
+=================================================================
+== FILE: /srv/max-mini-app/frontend/.env
+== DESC: Переменные окружения фронтенда
+=================================================================
+HTTPS=true
+
+
+
+=================================================================
+== FILE: /etc/nginx/sites-available/timbot-app
+== DESC: Конфигурация Nginx для домена
+=================================================================
+# =================================================================
+# Django Backend (API) Server
+# =================================================================
+server {
+    # Этот блок отвечает за работу API на порту 443 (HTTPS)
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    server_name xn--80auew.xn--80aamnlk4b.xn--p1ai; # Ваш домен в Punycode
+
+    # --- SSL-конфигурация от Certbot (НЕ ТРОГАТЬ) ---
+    ssl_certificate /etc/letsencrypt/live/xn--80auew.xn--80aamnlk4b.xn--p1ai/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/xn--80auew.xn--80aamnlk4b.xn--p1ai/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    # --- БЛОК 1: Проксирование API на Django/Gunicorn ---
+    location /api/ {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/run/timbot-app.sock;
+    }
+
+    # --- БЛОК 2: Проксирование Админки на Django/Gunicorn ---
+    location /admin/ {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/run/timbot-app.sock;
+    }
+
+    # --- БЛОК 3: ПРАВИЛЬНАЯ РАЗДАЧА СТАТИКИ DJANGO ---
+    #    Nginx отдает файлы напрямую, не трогая Gunicorn.
+    location /django-static/ {
+        # Путь к папке, которую мы создали командой 'python manage.py collectstatic'
+        alias /srv/max-mini-app/backend/staticfiles/;
+    }
+
+    # --- БЛОК 4: ВСЕ ОСТАЛЬНЫЕ запросы проксируем на React Dev Server ---
+    location / {
+        # Было:
+        # proxy_pass http://localhost:3001;
+        
+        # Стало:
+        proxy_pass https://localhost:3001;
+
+        # Добавляем директиву, чтобы Nginx доверял самоподписанному
+        # сертификату сервера разработки React
+        proxy_ssl_verify off;
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Настройки для поддержки WebSocket (нужны для Hot Reload)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+# =================================================================
+# Редирект с HTTP на HTTPS
+# =================================================================
+server {
+    # Этот блок отвечает за автоматическое перенаправление всех
+    # небезопасных запросов на защищенную HTTPS-версию
+    listen 80;
+    listen [::]:80;
+    
+    server_name xn--80auew.xn--80aamnlk4b.xn--p1ai; # Ваш домен в Punycode
+
+    # --- Правило редиректа от Certbot (НЕ ТРОГАТЬ) ---
+    if ($host = xn--80auew.xn--80aamnlk4b.xn--p1ai) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+    
+    return 404; # managed by Certbot
+}
+
+
