@@ -17,7 +17,6 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.126",
-    "@types/react": "^19.2.4",
     "@types/react-dom": "^19.2.3",
     "axios": "^1.13.2",
     "buffer": "^6.0.3",
@@ -59,6 +58,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react": "^19.2.7",
     "autoprefixer": "^10.4.22",
     "customize-cra": "^1.0.0",
     "postcss": "^8.5.6",
