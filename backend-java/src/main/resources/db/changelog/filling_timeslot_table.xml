@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="insert_timeslot_data" author="kolmi (generated)">
+        <!-- Неделя 1 (нечётная) -->
+        <!-- Понедельник -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Вторник -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Среда -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Четверг -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Пятница -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="false"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+
+        <!-- Неделя 2 (чётная) -->
+        <!-- Понедельник -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="1"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Вторник -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="2"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Среда -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="3"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Четверг -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="4"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+        <!-- Пятница -->
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="1"/>
+            <column name="start_time" value="09:00:00"/>
+            <column name="end_time" value="10:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="2"/>
+            <column name="start_time" value="11:00:00"/>
+            <column name="end_time" value="12:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="3"/>
+            <column name="start_time" value="13:00:00"/>
+            <column name="end_time" value="14:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="4"/>
+            <column name="start_time" value="15:00:00"/>
+            <column name="end_time" value="16:30:00"/>
+        </insert>
+        <insert tableName="timeslot">
+            <column name="even" valueBoolean="true"/>
+            <column name="day_of_week" valueNumeric="5"/>
+            <column name="pair_number" valueNumeric="5"/>
+            <column name="start_time" value="16:55:00"/>
+            <column name="end_time" value="18:25:00"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

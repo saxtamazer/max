@@ -128,9 +128,9 @@ DATABASES = {
     # }
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'max_app_db',
-        'USER': 'max_app_user',
-        'PASSWORD': '9923DLEIWAN2002q',
+        'NAME': 'timetable_max',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
         'HOST': 'localhost',
         'PORT': '5432',
     }
