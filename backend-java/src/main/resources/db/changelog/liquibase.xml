@@ -11,4 +11,7 @@
     <include file="create_model.xml" relativeToChangelogFile="true"/>
     <include file="filling_type_lesson_table.xml" relativeToChangelogFile="true"/>
     <include file="filling_timeslot_table.xml" relativeToChangelogFile="true"/>
+
+    <!--тестовые данные-->
+    <include file="test_data.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

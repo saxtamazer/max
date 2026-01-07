@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <!-- 1. Заполнение справочных данных (Кафедры, Аудитории, Группы) -->
+    <changeSet id="insert_base_dictionaries" author="kolmi (generated)">
+
+        <!-- Кафедры -->
+        <insert tableName="department">
+            <column name="name" value="Кафедра Программной Инженерии"/> <!-- ID 1 -->
+        </insert>
+        <insert tableName="department">
+            <column name="name" value="Кафедра Высшей Математики"/> <!-- ID 2 -->
+        </insert>
+        <insert tableName="department">
+            <column name="name" value="Кафедра Иностранных Языков"/> <!-- ID 3 -->
+        </insert>
+
+        <!-- Аудитории -->
+        <insert tableName="auditorium">
+            <column name="block" valueNumeric="1"/>
+            <column name="number" valueNumeric="101"/> <!-- ID 1 (Лекционная) -->
+        </insert>
+        <insert tableName="auditorium">
+            <column name="block" valueNumeric="1"/>
+            <column name="number" valueNumeric="205"/> <!-- ID 2 (Комп. класс) -->
+        </insert>
+        <insert tableName="auditorium">
+            <column name="block" valueNumeric="2"/>
+            <column name="number" valueNumeric="310"/> <!-- ID 3 (Семинарская) -->
+        </insert>
+
+        <!-- Группы -->
+        <!-- Для тестов расписания используем группу ID=1 -->
+        <insert tableName="student_group">
+            <column name="name" value="ПИ-21"/> <!-- ID 1 -->
+        </insert>
+        <insert tableName="student_group">
+            <column name="name" value="ПИ-22"/> <!-- ID 2 -->
+        </insert>
+        <insert tableName="student_group">
+            <column name="name" value="ИВТ-11"/> <!-- ID 3 -->
+        </insert>
+    </changeSet>
+
+    <!-- 2. Заполнение Предметов и Преподавателей -->
+    <changeSet id="insert_academic_data" author="kolmi (generated)">
+
+        <!-- Предметы.
+             Используем type_id: 1='лек', 2='пр' (из предыдущего контекста).
+             Используем department_id: 1=ПИ, 2=Мат, 3=ИнЯз.
+        -->
+
+        <!-- ID 1: Базы Данных (Лекция) -->
+        <insert tableName="subject">
+            <column name="name" value="Базы Данных"/>
+            <column name="type_id" valueNumeric="1"/>
+            <column name="department_id" valueNumeric="1"/>
+        </insert>
+        <!-- ID 2: Базы Данных (Практика) -->
+        <insert tableName="subject">
+            <column name="name" value="Базы Данных"/>
+            <column name="type_id" valueNumeric="2"/>
+            <column name="department_id" valueNumeric="1"/>
+        </insert>
+        <!-- ID 3: Математический анализ (Лекция) -->
+        <insert tableName="subject">
+            <column name="name" value="Математический анализ"/>
+            <column name="type_id" valueNumeric="1"/>
+            <column name="department_id" valueNumeric="2"/>
+        </insert>
+        <!-- ID 4: Английский язык (Практика) -->
+        <insert tableName="subject">
+            <column name="name" value="Английский язык"/>
+            <column name="type_id" valueNumeric="2"/>
+            <column name="department_id" valueNumeric="3"/>
+        </insert>
+
+        <!-- Преподаватели -->
+        <!-- ID 1: Петров (Ведет БД) -->
+        <insert tableName="educator">
+            <column name="last_name" value="Петров"/>
+            <column name="first_name" value="Сергей"/>
+            <column name="middle_name" value="Сергеевич"/>
+            <column name="department_id" valueNumeric="1"/>
+        </insert>
+        <!-- ID 2: Иванова (Ведет Матан) -->
+        <insert tableName="educator">
+            <column name="last_name" value="Иванова"/>
+            <column name="first_name" value="Мария"/>
+            <column name="middle_name" value="Ивановна"/>
+            <column name="department_id" valueNumeric="2"/>
+        </insert>
+        <!-- ID 3: Смит (Ведет Английский) -->
+        <insert tableName="educator">
+            <column name="last_name" value="Смит"/>
+            <column name="first_name" value="Джон"/>
+            <column name="middle_name" value=""/>
+            <column name="department_id" valueNumeric="3"/>
+        </insert>
+    </changeSet>
+
+    <!-- 3. Связь Преподаватель <-> Предмет (Многие ко многим) -->
+    <changeSet id="link_educator_subject_data" author="kolmi (generated)">
+
+        <!-- Петров (ID 1) ведет БД Лек (ID 1) и БД Пр (ID 2) -->
+        <insert tableName="educator_subject">
+            <column name="educator_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="educator_subject">
+            <column name="educator_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="2"/>
+        </insert>
+
+        <!-- Иванова (ID 2) ведет Матан Лек (ID 3) -->
+        <insert tableName="educator_subject">
+            <column name="educator_id" valueNumeric="2"/>
+            <column name="subject_id" valueNumeric="3"/>
+        </insert>
+
+        <!-- Смит (ID 3) ведет Английский Пр (ID 4) -->
+        <insert tableName="educator_subject">
+            <column name="educator_id" valueNumeric="3"/>
+            <column name="subject_id" valueNumeric="4"/>
+        </insert>
+    </changeSet>
+
+    <!-- 4. Расписание для группы "ПИ-21" (group_id=1) на 1-ю неделю (нечетную) -->
+    <changeSet id="insert_lesson_schedule" author="kolmi (generated)">
+
+        <!--
+           Таймслоты (согласно порядку вставки в previous prompt):
+           1-5: Понедельник нечетный (1 пара ... 5 пара)
+           6-10: Вторник нечетный
+           11-15: Среда нечетный
+        -->
+
+        <!-- Понедельник, 1 пара (timeslot_id=1).
+             Предмет: БД Лекция (subject_id=1).
+             Препод: Петров (educator_id=1).
+             Ауд: 101 (auditorium_id=1).
+        -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="1"/>
+            <column name="educator_id" valueNumeric="1"/>
+            <column name="auditorium_id" valueNumeric="1"/>
+            <column name="timeslot_id" valueNumeric="1"/>
+        </insert>
+
+        <!-- Понедельник, 2 пара (timeslot_id=2).
+             Предмет: БД Практика (subject_id=2).
+             Препод: Петров (educator_id=1).
+             Ауд: 205 (auditorium_id=2).
+        -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="2"/>
+            <column name="educator_id" valueNumeric="1"/>
+            <column name="auditorium_id" valueNumeric="2"/>
+            <column name="timeslot_id" valueNumeric="2"/>
+        </insert>
+
+        <!-- Вторник, 1 пара (timeslot_id=6).
+             Предмет: Матан Лекция (subject_id=3).
+             Препод: Иванова (educator_id=2).
+             Ауд: 101 (auditorium_id=1).
+        -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="3"/>
+            <column name="educator_id" valueNumeric="2"/>
+            <column name="auditorium_id" valueNumeric="1"/>
+            <column name="timeslot_id" valueNumeric="6"/>
+        </insert>
+
+        <!-- Вторник, 2 пара (timeslot_id=7).
+             Окно (нет записи)
+        -->
+
+        <!-- Вторник, 3 пара (timeslot_id=8).
+             Предмет: Английский (subject_id=4).
+             Препод: Смит (educator_id=3).
+             Ауд: 310 (auditorium_id=3).
+        -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="4"/>
+            <column name="educator_id" valueNumeric="3"/>
+            <column name="auditorium_id" valueNumeric="3"/>
+            <column name="timeslot_id" valueNumeric="8"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>
