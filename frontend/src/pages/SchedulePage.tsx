@@ -41,7 +41,7 @@ export const SchedulePage: React.FC = () => {
     const [error, setError] = useState('');
     
     useEffect(() => {
-        axios.get<ScheduleResponse>('/api/v1/schedule/view/')
+        axios.get<ScheduleResponse>('http://localhost:8081/api/v1/schedule/view')
             .then(response => {
                 const { events: rawEvents, current_week_is_even } = response.data;
                 
