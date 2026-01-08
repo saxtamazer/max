@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.StudentGroupRepository;
-import com.example.demo.service.converter.StudentGroupModelToStudentGroupDTOConverter;
+import com.example.demo.service.converter.modeltodto.StudentGroupModelToStudentGroupDTOConverter;
 import com.example.demo.service.dto.StudentGroupDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

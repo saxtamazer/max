@@ -1,4 +1,4 @@
-package com.example.demo.service.converter;
+package com.example.demo.service.converter.modeltodto;
 
 import com.example.demo.dao.entities.LessonModel;
 import com.example.demo.service.dto.LessonDTO;
@@ -10,6 +10,7 @@ public class LessonModelToLessonDTOConverter implements Converter<LessonModel, L
     @Override
     public LessonDTO convert(LessonModel source) {
         return new LessonDTO(
+                source.getId(),
                 source.getGroupId(),
                 source.getGroupId(),
                 source.getEducatorId(),

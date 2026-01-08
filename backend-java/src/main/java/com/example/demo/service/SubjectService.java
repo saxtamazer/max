@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.SubjectRepository;
-import com.example.demo.service.converter.SubjectModelToSubjectDTOConverter;
+import com.example.demo.service.converter.modeltodto.SubjectModelToSubjectDTOConverter;
 import com.example.demo.service.dto.SubjectDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

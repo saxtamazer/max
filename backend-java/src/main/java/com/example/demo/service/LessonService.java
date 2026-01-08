@@ -1,7 +1,8 @@
 package com.example.demo.service;
 
+import com.example.demo.dao.lesson.EvenFilter;
 import com.example.demo.dao.lesson.LessonRepository;
-import com.example.demo.service.converter.LessonModelToLessonDTOConverter;
+import com.example.demo.service.converter.modeltodto.LessonModelToLessonDTOConverter;
 import com.example.demo.service.dto.AdvancedLessonDTO;
 import com.example.demo.service.dto.LessonDTO;
 import lombok.RequiredArgsConstructor;
@@ -28,18 +29,28 @@ public class LessonService {
                 .toList();
     }
 
-    public List<AdvancedLessonDTO> getAllAdvancedLessons() {
-        return this.getAllLessons()
+    public List<LessonDTO> getAllLessonsByEven(EvenFilter evenFilter) {
+        return lessonRepository
+                .findAllLessonByEvenFilter(evenFilter)
+                .stream()
+                .map(converter::convert)
+                .toList();
+    }
+
+    public List<AdvancedLessonDTO> getAllAdvancedLessonsByEven(EvenFilter evenFilter) {
+        return this.getAllLessonsByEven(evenFilter)
                 .stream()
                 .map(lesson -> {
                     return new AdvancedLessonDTO(
-                        studentGroupService.getStudentGroup(lesson.getGroupId()),
-                        subjectService.getSubjectById(lesson.getSubjectId()),
-                        educatorService.getEducatorById(lesson.getEducatorId()),
-                        auditoriumService.getAuditoriumById(lesson.getAuditoriumId()),
-                        timeslotService.getTimeslotById(lesson.getTimeslotId())
-                    );
-                })
+                            lesson.getId(),
+                            studentGroupService.getStudentGroup(lesson.getGroupId()),
+                            subjectService.getSubjectById(lesson.getSubjectId()),
+                            educatorService.getEducatorById(lesson.getEducatorId()),
+                            auditoriumService.getAuditoriumById(lesson.getAuditoriumId()),
+                            timeslotService.getTimeslotById(lesson.getTimeslotId())
+                        );
+                    }
+                )
                 .toList();
     }
 }

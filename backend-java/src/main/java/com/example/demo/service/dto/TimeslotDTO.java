@@ -9,8 +9,8 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class TimeslotDTO {
     private boolean even;
-    private int day_of_week;
-    private int pair_number;
-    private LocalTime start_time;
-    private LocalTime end_time;
+    private int dayOfWeek;
+    private int pairNumber;
+    private LocalTime startTime;
+    private LocalTime endTime;
 }

@@ -20,15 +20,15 @@ public class TimeslotModel {
     @Column(name = "even", nullable = false)
     private boolean isEven;
 
-    @Column(name = "even", nullable = false)
+    @Column(name = "day_of_week", nullable = false)
     private int dayOfWeek;
 
-    @Column(name = "even", nullable = false)
+    @Column(name = "pair_number", nullable = false)
     private int pairNumber;
 
-    @Column(name = "even", nullable = false, columnDefinition = "time")
+    @Column(name = "start_time", nullable = false, columnDefinition = "time")
     private LocalTime startTime;
 
-    @Column(name = "even", nullable = false, columnDefinition = "time")
+    @Column(name = "end_time", nullable = false, columnDefinition = "time")
     private LocalTime endTime;
 }

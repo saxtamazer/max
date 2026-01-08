@@ -10,10 +10,9 @@ import java.util.List;
 public class LessonRepositoryCustomImpl implements LessonRepositoryCustom {
     private final EntityManager em;
     @Override
-    public List<LessonModel> getAllLessonByEvenFilter(EvenFilter evenFilter) {
+    public List<LessonModel> findAllLessonByEvenFilter(EvenFilter evenFilter) {
         String query = createQuery(evenFilter);
-        List<LessonModel> lessons = em.createQuery(query).getResultList();
-        return lessons;
+        return em.createNativeQuery(query, LessonModel.class).getResultList();
     }
 
     private String createQuery(EvenFilter evenFilter) {

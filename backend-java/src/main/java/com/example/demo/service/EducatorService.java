@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.EducatorRepository;
-import com.example.demo.service.converter.EducatorModelToEducatorDTOConverter;
+import com.example.demo.service.converter.modeltodto.EducatorModelToEducatorDTOConverter;
 import com.example.demo.service.dto.EducatorDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

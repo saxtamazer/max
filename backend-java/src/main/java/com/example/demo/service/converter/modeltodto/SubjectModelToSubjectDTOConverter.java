@@ -1,4 +1,4 @@
-package com.example.demo.service.converter;
+package com.example.demo.service.converter.modeltodto;
 
 import com.example.demo.dao.entities.SubjectModel;
 import com.example.demo.service.dto.SubjectDTO;

@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class AdvancedLessonDTO {
+    private int id;
     private StudentGroupDTO group;
     private SubjectDTO subject;
     private EducatorDTO educator;

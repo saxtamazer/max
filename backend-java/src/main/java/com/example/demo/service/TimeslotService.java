@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.TimeslotRepository;
-import com.example.demo.service.converter.TimeslotModelToTimeslotDTOConverter;
+import com.example.demo.service.converter.modeltodto.TimeslotModelToTimeslotDTOConverter;
 import com.example.demo.service.dto.TimeslotDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

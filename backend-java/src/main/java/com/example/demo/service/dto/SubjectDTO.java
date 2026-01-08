@@ -7,5 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class SubjectDTO {
     private String name;
-    private int type_id;
+    private int typeId;
 }

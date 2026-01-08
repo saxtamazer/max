@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.AuditoriumRepository;
-import com.example.demo.service.converter.AuditoriumModelToAuditoriumDTOConverter;
+import com.example.demo.service.converter.modeltodto.AuditoriumModelToAuditoriumDTOConverter;
 import com.example.demo.service.dto.AuditoriumDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
