@@ -1,12 +1,13 @@
 package com.example.demo.service.converter.dtotoresponse;
 
 import com.example.demo.api.json.LessonResponse;
-import com.example.demo.service.dto.AdvancedLessonDTO;
-import com.example.demo.service.dto.AuditoriumDTO;
-import com.example.demo.service.dto.EducatorDTO;
-import com.example.demo.service.dto.SubjectDTO;
+import com.example.demo.service.dto.*;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Service;
+
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Service
 public class AdvanceLessonDTOToLessonResponseConverter implements Converter<AdvancedLessonDTO, LessonResponse> {
@@ -14,28 +15,37 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
     public LessonResponse convert(AdvancedLessonDTO source) {
         LessonResponse response = new LessonResponse();
 
+        LocalDateTime now = LocalDateTime.now();
+
         response.setId(source.getId());
         response.setGroup(source.getGroup().getName());
-        response.setSubject(handleSubject(source.getSubject()));
-        response.setTeacher(handleEducatorFullName(source.getEducator()));
-        response.setRoom(handleAuditorium(source.getAuditorium()));
-        response.setStartTime(source.getTimeslot().getStartTime().toString());
-        response.setEndTime(source.getTimeslot().getEndTime().toString());
+        response.setSubject(formatSubject(source.getSubject()));
+        response.setTeacher(formatEducatorFullName(source.getEducator()));
+        response.setRoom(formatAuditorium(source.getAuditorium()));
+        response.setStartTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getStartTime()));
+        response.setEndTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getEndTime()));
         response.setWeekType(source.getTimeslot().isEven() ? "EVEN" : "ODD");
         return response;
     }
 
-    private String handleSubject(SubjectDTO subject) { // add return format like "пр. Математика"
+    private String formatSubject(SubjectDTO subject) { // add return format like "пр. Математика"
         return subject.getName();
     }
 
-    private String handleEducatorFullName(EducatorDTO educator) {
+    private String formatEducatorFullName(EducatorDTO educator) {
         return educator.getLastName() + " "
                 + educator.getFirstName().charAt(0) + ". "
                 /*+ educator.getMiddleName().charAt(0) + "."*/; // add check for null middle name
     }
 
-    private String handleAuditorium(AuditoriumDTO auditorium) {
+    private String formatAuditorium(AuditoriumDTO auditorium) {
         return auditorium.getBlock() + "-" + auditorium.getNumber();
+    }
+
+    private LocalDateTime handleTimeslot(LocalDateTime referenceDay, TimeslotDTO timeslot, LocalTime time) {
+        return referenceDay
+                .with(DayOfWeek.of(timeslot.getDayOfWeek()))
+                .withHour(time.getHour())
+                .withMinute(time.getMinute());
     }
 }

@@ -7,6 +7,7 @@ import com.example.demo.service.dto.AdvancedLessonDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.List;
 
 @Service
@@ -16,14 +17,16 @@ public class ScheduleManager {
     private final AdvanceLessonDTOToLessonResponseConverter converter;
 
     public ScheduleResponse getScheduleByThisWeek() {
-        List<AdvancedLessonDTO> lessons = lessonService.getAllAdvancedLessonsByEven(getEvenFilter());
+        EvenFilter evenFilter = getEvenFilter();
+        List<AdvancedLessonDTO> lessons = lessonService.getAllAdvancedLessonsByEven(evenFilter);
         ScheduleResponse scheduleResponse = new ScheduleResponse();
         scheduleResponse.setEvents(lessons.stream().map(converter::convert).toList());
-        scheduleResponse.setCurrentWeekIsEven(false); // todo handle by even week
+        scheduleResponse.setCurrentWeekIsEven(evenFilter.isEven());
         return scheduleResponse;
     }
 
     private EvenFilter getEvenFilter() {
-        return new EvenFilter(false); // todo handle by even week
+        Calendar c = Calendar.getInstance();
+        return new EvenFilter(c.get(Calendar.WEEK_OF_MONTH) % 2 == 0);
     }
 }

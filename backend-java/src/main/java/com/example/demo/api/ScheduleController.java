@@ -2,6 +2,7 @@ package com.example.demo.api;
 
 import com.example.demo.service.ScheduleManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,6 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("api/v1/schedule")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "https://localhost:3000")
 public class ScheduleController {
     private final ScheduleManager scheduleManager;
 

@@ -132,70 +132,114 @@
         </insert>
     </changeSet>
 
-    <!-- 4. Расписание для группы "ПИ-21" (group_id=1) на 1-ю неделю (нечетную) -->
-    <changeSet id="insert_lesson_schedule" author="kolmi (generated)">
+    <changeSet id="insert_schedule_data_v2" author="kolmi (generated)">
 
-        <!--
-           Таймслоты (согласно порядку вставки в previous prompt):
-           1-5: Понедельник нечетный (1 пара ... 5 пара)
-           6-10: Вторник нечетный
-           11-15: Среда нечетный
-        -->
+        <!-- ========================================================= -->
+        <!-- НЕДЕЛЯ 1 (НЕЧЁТНАЯ) -->
+        <!-- Таймслоты: 1-5(Пн), 6-10(Вт), 11-15(Ср), 16-20(Чт), 21-25(Пт) -->
+        <!-- ========================================================= -->
 
-        <!-- Понедельник, 1 пара (timeslot_id=1).
-             Предмет: БД Лекция (subject_id=1).
-             Препод: Петров (educator_id=1).
-             Ауд: 101 (auditorium_id=1).
-        -->
+        <!-- Понедельник: 1 пара - Базы Данных (Лекция) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="1"/>
+            <column name="educator_id" valueNumeric="1"/> <!-- Петров -->
+            <column name="auditorium_id" valueNumeric="1"/> <!-- 101 Лекционная -->
+            <column name="timeslot_id" valueNumeric="1"/>
+        </insert>
+        <!-- Понедельник: 2 пара - Базы Данных (Практика) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="2"/>
+            <column name="educator_id" valueNumeric="1"/> <!-- Петров -->
+            <column name="auditorium_id" valueNumeric="2"/> <!-- 205 Комп. класс -->
+            <column name="timeslot_id" valueNumeric="2"/>
+        </insert>
+
+        <!-- Вторник: 2 пара - Матан (Лекция) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="3"/>
+            <column name="educator_id" valueNumeric="2"/> <!-- Иванова -->
+            <column name="auditorium_id" valueNumeric="1"/> <!-- 101 Лекционная -->
+            <column name="timeslot_id" valueNumeric="7"/>
+        </insert>
+
+        <!-- Среда: 3 пара - Английский (Практика) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="4"/>
+            <column name="educator_id" valueNumeric="3"/> <!-- Смит -->
+            <column name="auditorium_id" valueNumeric="3"/> <!-- 310 Семинарская -->
+            <column name="timeslot_id" valueNumeric="13"/>
+        </insert>
+
+        <!-- Четверг: 1 пара - Базы Данных (Практика) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="2"/>
+            <column name="educator_id" valueNumeric="1"/> <!-- Петров -->
+            <column name="auditorium_id" valueNumeric="2"/> <!-- 205 Комп. класс -->
+            <column name="timeslot_id" valueNumeric="16"/>
+        </insert>
+
+        <!-- Пятница: 2 пара - Матан (Лекция) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="3"/>
+            <column name="educator_id" valueNumeric="2"/> <!-- Иванова -->
+            <column name="auditorium_id" valueNumeric="1"/> <!-- 101 Лекционная -->
+            <column name="timeslot_id" valueNumeric="22"/>
+        </insert>
+
+        <!-- ========================================================= -->
+        <!-- НЕДЕЛЯ 2 (ЧЁТНАЯ) -->
+        <!-- Таймслоты: 26-30(Пн), 31-35(Вт), 36-40(Ср), 41-45(Чт), 46-50(Пт) -->
+        <!-- ========================================================= -->
+
+        <!-- Понедельник: 2 пара - Базы Данных (Лекция) -->
         <insert tableName="lesson">
             <column name="group_id" valueNumeric="1"/>
             <column name="subject_id" valueNumeric="1"/>
             <column name="educator_id" valueNumeric="1"/>
             <column name="auditorium_id" valueNumeric="1"/>
-            <column name="timeslot_id" valueNumeric="1"/>
+            <column name="timeslot_id" valueNumeric="27"/>
         </insert>
 
-        <!-- Понедельник, 2 пара (timeslot_id=2).
-             Предмет: БД Практика (subject_id=2).
-             Препод: Петров (educator_id=1).
-             Ауд: 205 (auditorium_id=2).
-        -->
-        <insert tableName="lesson">
-            <column name="group_id" valueNumeric="1"/>
-            <column name="subject_id" valueNumeric="2"/>
-            <column name="educator_id" valueNumeric="1"/>
-            <column name="auditorium_id" valueNumeric="2"/>
-            <column name="timeslot_id" valueNumeric="2"/>
-        </insert>
-
-        <!-- Вторник, 1 пара (timeslot_id=6).
-             Предмет: Матан Лекция (subject_id=3).
-             Препод: Иванова (educator_id=2).
-             Ауд: 101 (auditorium_id=1).
-        -->
-        <insert tableName="lesson">
-            <column name="group_id" valueNumeric="1"/>
-            <column name="subject_id" valueNumeric="3"/>
-            <column name="educator_id" valueNumeric="2"/>
-            <column name="auditorium_id" valueNumeric="1"/>
-            <column name="timeslot_id" valueNumeric="6"/>
-        </insert>
-
-        <!-- Вторник, 2 пара (timeslot_id=7).
-             Окно (нет записи)
-        -->
-
-        <!-- Вторник, 3 пара (timeslot_id=8).
-             Предмет: Английский (subject_id=4).
-             Препод: Смит (educator_id=3).
-             Ауд: 310 (auditorium_id=3).
-        -->
+        <!-- Вторник: 1 пара - Английский (Практика) -->
         <insert tableName="lesson">
             <column name="group_id" valueNumeric="1"/>
             <column name="subject_id" valueNumeric="4"/>
             <column name="educator_id" valueNumeric="3"/>
             <column name="auditorium_id" valueNumeric="3"/>
-            <column name="timeslot_id" valueNumeric="8"/>
+            <column name="timeslot_id" valueNumeric="31"/>
+        </insert>
+
+        <!-- Среда: 3 пара - Матан (Лекция) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="3"/>
+            <column name="educator_id" valueNumeric="2"/>
+            <column name="auditorium_id" valueNumeric="1"/>
+            <column name="timeslot_id" valueNumeric="38"/>
+        </insert>
+
+        <!-- Четверг: 2 пара - Английский (Практика) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="4"/>
+            <column name="educator_id" valueNumeric="3"/>
+            <column name="auditorium_id" valueNumeric="3"/>
+            <column name="timeslot_id" valueNumeric="42"/>
+        </insert>
+
+        <!-- Пятница: 1 пара - Базы Данных (Практика) -->
+        <insert tableName="lesson">
+            <column name="group_id" valueNumeric="1"/>
+            <column name="subject_id" valueNumeric="2"/>
+            <column name="educator_id" valueNumeric="1"/>
+            <column name="auditorium_id" valueNumeric="2"/>
+            <column name="timeslot_id" valueNumeric="46"/>
         </insert>
 
     </changeSet>
