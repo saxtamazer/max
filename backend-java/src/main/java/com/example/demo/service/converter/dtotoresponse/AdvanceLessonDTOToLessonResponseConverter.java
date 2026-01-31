@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Optional;
 
 @Service
 public class AdvanceLessonDTOToLessonResponseConverter implements Converter<AdvancedLessonDTO, LessonResponse> {
@@ -33,9 +34,14 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
     }
 
     private String formatEducatorFullName(EducatorDTO educator) {
-        return educator.getLastName() + " "
-                + educator.getFirstName().charAt(0) + ". "
-                /*+ educator.getMiddleName().charAt(0) + "."*/; // add check for null middle name
+        return String.format("%s %s %s",
+                educator.getLastName(),
+                educator.getFirstName().charAt(0) + ".",
+                Optional.ofNullable(educator.getMiddleName())
+                        .filter(name -> !name.isEmpty())
+                        .map(name -> name.charAt(0) + ".")
+                        .orElse("")
+        ).trim();
     }
 
     private String formatAuditorium(AuditoriumDTO auditorium) {
