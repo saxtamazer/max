@@ -6,8 +6,3 @@ class Lesson:
         self.time = time
         self.data = data
         self.even = even
-
-    def describe(self):
-        print(self.group + "\n" + self.day_of_week + "\n" + self.time)
-        print(self.data)
-        print(self.even)
