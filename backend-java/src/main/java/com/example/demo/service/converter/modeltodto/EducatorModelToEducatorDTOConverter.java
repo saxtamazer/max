@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 public class EducatorModelToEducatorDTOConverter implements Converter<EducatorModel, EducatorDTO> {
     @Override
     public EducatorDTO convert(EducatorModel source) {
-        return new EducatorDTO(source.getLastName(), source.getFirstName(), source.getMiddleName());
+        return source == null ?
+                null
+                :
+                new EducatorDTO(source.getFullName());
     }
 }

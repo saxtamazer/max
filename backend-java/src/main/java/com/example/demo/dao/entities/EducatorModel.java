@@ -15,15 +15,9 @@ public class EducatorModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "last_name", nullable = false)
-    private String lastName;
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
 
-    @Column(name = "first_name", nullable = false)
-    private String firstName;
-
-    @Column(name = "middle_name", nullable = false)
-    private String middleName;
-
-    @Column(name = "department_id", nullable = false)
+    @Column(name = "department_id")
     private int departmentId;
 }

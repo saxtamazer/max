@@ -9,7 +9,7 @@ public class AdvancedLessonDTO {
     private int id;
     private StudentGroupDTO group;
     private SubjectDTO subject;
-    private EducatorDTO educator;
-    private AuditoriumDTO auditorium;
+    private EducatorDTO[] educators;
+    private AuditoriumDTO[] auditoriums;
     private TimeslotDTO timeslot;
 }

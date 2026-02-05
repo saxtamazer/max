@@ -1,11 +1,15 @@
 package com.example.demo.service.dto;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class SubjectDTO {
-    private String name;
-    private int typeId;
+    int id;
+    String name;
+    int typeId;
 }

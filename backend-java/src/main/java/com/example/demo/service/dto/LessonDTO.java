@@ -9,7 +9,7 @@ public class LessonDTO {
     private int id;
     private int groupId;
     private int subjectId;
-    private int educatorId;
-    private int auditoriumId;
+    private int[] educators;
+    private int[] auditoriums;
     private int timeslotId;
 }

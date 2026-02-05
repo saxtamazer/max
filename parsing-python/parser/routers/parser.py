@@ -10,12 +10,13 @@ def parsing_xlsx(file: UploadFile):
 
     url = "http://localhost:8081/api/v1/parser/read"
 
-    with open(json_path, "rb") as file:
+    with open(json_path, "rb") as json_file:
+        files = {
+            "file" :  ("schedule.json", json_file, "application/json")
+                }
         response = requests.post(
                 url,
-                files = {
-                    "file": ("schedule.json", file, "application/json")
-                }
+                files = files
             )
     
     print("status: " + str(response.status_code))

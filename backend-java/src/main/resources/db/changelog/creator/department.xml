@@ -8,16 +8,14 @@
         http://www.liquibase.org/xml/ns/dbchangelog-ext
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <changeSet id="insert_type_lesson_data" author="anton">
-        <insert tableName="type_lesson">
-            <column name="name" value="лек"/>
-        </insert>
-        <insert tableName="type_lesson">
-            <column name="name" value="пр"/>
-        </insert>
-        <insert tableName="type_lesson">
-            <column name="name" value="лаб"/>
-        </insert>
+    <changeSet id="create_department" author="kolmi (generated)">
+        <createTable tableName="department">
+            <column name="id" type="serial" autoIncrement="true">
+                <constraints unique="true" primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(64)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+        </createTable>
     </changeSet>
-
 </databaseChangeLog>

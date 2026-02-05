@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.Optional;
 
 @Service
@@ -21,8 +22,16 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
         response.setId(source.getId());
         response.setGroup(source.getGroup().getName());
         response.setSubject(formatSubject(source.getSubject()));
-        response.setTeacher(formatEducatorFullName(source.getEducator()));
-        response.setRoom(formatAuditorium(source.getAuditorium()));
+        response.setTeacher(
+                (String[]) Arrays.stream(source.getEducators())
+                        .map(EducatorDTO::getFullName)
+                        .toArray()
+        );
+        response.setRoom(
+                (String[]) Arrays.stream(source.getAuditoriums())
+                        .map(this::formatAuditorium)
+                        .toArray()
+        );
         response.setStartTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getStartTime()));
         response.setEndTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getEndTime()));
         response.setWeekType(source.getTimeslot().isEven() ? "EVEN" : "ODD");
@@ -31,17 +40,6 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
 
     private String formatSubject(SubjectDTO subject) { // add return format like "пр. Математика"
         return subject.getName();
-    }
-
-    private String formatEducatorFullName(EducatorDTO educator) {
-        return String.format("%s %s %s",
-                educator.getLastName(),
-                educator.getFirstName().charAt(0) + ".",
-                Optional.ofNullable(educator.getMiddleName())
-                        .filter(name -> !name.isEmpty())
-                        .map(name -> name.charAt(0) + ".")
-                        .orElse("")
-        ).trim();
     }
 
     private String formatAuditorium(AuditoriumDTO auditorium) {

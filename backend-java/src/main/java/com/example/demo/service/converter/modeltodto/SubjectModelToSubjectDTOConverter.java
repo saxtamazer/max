@@ -9,6 +9,11 @@ import org.springframework.stereotype.Service;
 public class SubjectModelToSubjectDTOConverter implements Converter<SubjectModel, SubjectDTO> {
     @Override
     public SubjectDTO convert(SubjectModel source) {
-        return new SubjectDTO(source.getName(), source.getTypeId());
+        return source == null ?
+                null
+                :
+                new SubjectDTO(
+                        source.getId(), source.getName(), source.getTypeId()
+                );
     }
 }

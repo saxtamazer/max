@@ -9,12 +9,16 @@ import org.springframework.stereotype.Service;
 public class TimeslotModelToTimeslotDTOConverter implements Converter<TimeslotModel, TimeslotDTO> {
     @Override
     public TimeslotDTO convert(TimeslotModel source) {
-        return new TimeslotDTO(
-                source.isEven(),
-                source.getDayOfWeek(),
-                source.getPairNumber(),
-                source.getStartTime(),
-                source.getEndTime()
-        );
+        return source == null ?
+                null
+                :
+                new TimeslotDTO(
+                        source.getId(),
+                        source.isEven(),
+                        source.getDayOfWeek(),
+                        source.getPairNumber(),
+                        source.getStartTime(),
+                        source.getEndTime()
+                );
     }
 }

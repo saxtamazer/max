@@ -6,7 +6,5 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class EducatorDTO {
-    private String lastName;
-    private String firstName;
-    private String middleName;
+    private String fullName;
 }

@@ -1,13 +1,15 @@
 package com.example.demo.api;
 
-import com.example.demo.service.ScheduleWebClientService;
+import com.example.demo.service.ScheduleClientService;
+import com.example.demo.service.ScheduleManager;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("api/v1/parser")
@@ -15,15 +17,19 @@ import org.springframework.web.multipart.MultipartFile;
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @CrossOrigin(origins = "http://localhost:8082")
 public class ParserController {
-    ScheduleWebClientService scheduleWebClientService;
+    ScheduleClientService scheduleClientService;
+    ScheduleManager scheduleManager;
 
     @GetMapping("test")
     public void test() {
-        scheduleWebClientService.sendFile();
+        scheduleClientService.sendFile();
     }
 
-    @PostMapping(value = "read", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void read(@RequestPart("file") FilePart file) {
-        System.out.println(2);
+    @PostMapping(value = "read")
+    public Mono<ResponseEntity<String>> read(@RequestPart("file") Flux<FilePart> files) {
+        return files
+                .flatMap(scheduleClientService::saveFile)
+                .then(Mono.fromRunnable(scheduleManager::writeSchedule))
+                .then(Mono.just(ResponseEntity.ok().body("Files successfully saved")));
     }
 }

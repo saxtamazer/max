@@ -13,8 +13,8 @@ public class LessonResponse {
     private int id;
     private String group;
     private String subject;
-    private String teacher;
-    private String room;
+    private String[] teacher;
+    private String[] room;
 
     @JsonProperty("start_time")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")

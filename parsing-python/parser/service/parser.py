@@ -1,6 +1,7 @@
 import pandas as pd
 import openpyxl as xl
 import json
+import re
 
 from service.Lesson import Lesson
 
@@ -28,14 +29,46 @@ def __extract_lesson(df, row_index, col_index): # выношу логику сб
     day_of_week = str(df.iat[row_index, 0]).strip()
     if day_of_week in days_of_week:  # исключаю нижние строки для подписей
         data = str(df.iat[row_index, col_index]).strip()
-        if len(data) == 0: return None # чтобы не записывал пустые пары
+        if not data or data == "nan" or len(data) == 0: return None # чтобы не записывал пустые пары
+        type, subject, teachers, rooms = __extract_data(data)
+
         group = df.iat[0, col_index].strip()
-        time = df.iat[row_index, 1].strip()
+
+        time = df.iat[row_index, 1].strip().split('-')
+        start_time = time[0]
+        end_time = time[1]
+
         even = row_index % 2 == 0
-        lesson = Lesson(group, day_of_week, time, data, even)
+        lesson = Lesson(group, day_of_week, start_time, end_time, type, subject, teachers, rooms, even)
         return lesson
     else: 
         return None
+    
+def __extract_data(data):
+    type_pattern = r'^([^.]+)\.'
+    teacher_pattern = r'([А-ЯЁ][а-яёА-ЯЁ-]+\s+[А-ЯЁ]\.\s?[А-ЯЁ]\.)'
+    room_pattern = r'(\b\d{1,2}\s?-\s?[А-Яа-яЁё0-9\s\(\)\.]+(?=\s{2,}|\n|$|\s*[А-ЯЁ][а-яёА-ЯЁ-]+\s+[А-ЯЁ]\.)|\bСК\b)'
+
+    cleaned_data = str(data).replace('\xa0', ' ').replace('\n', ' ').replace('\t', ' ').strip()
+
+    type_match = re.match(type_pattern, cleaned_data)
+    if type_match:
+        type = type_match.group(1).strip()
+        cleaned_data = cleaned_data[len(type) + 1:]
+
+    teachers = re.findall(teacher_pattern, cleaned_data)
+    teachers = list(map(str.strip, teachers))
+    for t in teachers:
+        cleaned_data = cleaned_data.replace(t, "")
+
+    rooms = re.findall(room_pattern, cleaned_data)
+    rooms = list(map(str.strip, rooms))
+    for r in rooms:
+        cleaned_data = cleaned_data.replace(r, "")
+
+    subject = cleaned_data.strip()
+
+    return type, subject, teachers, rooms
 
 def __handle_merge_cells(work_sheet):
     merged_cells = list(work_sheet.merged_cells.ranges)
