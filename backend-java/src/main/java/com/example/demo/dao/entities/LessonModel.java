@@ -41,7 +41,7 @@ public class LessonModel {
     @JoinTable(
             name = "lesson_auditorium",
             joinColumns = @JoinColumn(name = "lesson_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "auditorium", referencedColumnName = "id")
+            inverseJoinColumns = @JoinColumn(name = "auditorium_id", referencedColumnName = "id")
     )
     List<AuditoriumModel> auditoriums = new ArrayList<>();
 

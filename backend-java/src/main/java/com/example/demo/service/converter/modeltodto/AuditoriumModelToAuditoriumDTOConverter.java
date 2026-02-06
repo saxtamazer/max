@@ -9,6 +9,13 @@ import org.springframework.stereotype.Service;
 public class AuditoriumModelToAuditoriumDTOConverter implements Converter<AuditoriumModel, AuditoriumDTO> {
     @Override
     public AuditoriumDTO convert(AuditoriumModel source) {
-        return new AuditoriumDTO(source.getBlock(), source.getNumber());
+        return source == null ?
+                null
+                :
+                new AuditoriumDTO(
+                        source.getId(),
+                        source.getBlock(),
+                        source.getIdent()
+                );
     }
 }

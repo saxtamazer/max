@@ -12,6 +12,9 @@ public class EducatorModelToEducatorDTOConverter implements Converter<EducatorMo
         return source == null ?
                 null
                 :
-                new EducatorDTO(source.getFullName());
+                new EducatorDTO(
+                        source.getId(),
+                        source.getFullName()
+                );
     }
 }

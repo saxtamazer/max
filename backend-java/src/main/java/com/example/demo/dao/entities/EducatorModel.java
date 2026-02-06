@@ -17,7 +17,4 @@ public class EducatorModel {
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
-
-    @Column(name = "department_id")
-    private int departmentId;
 }

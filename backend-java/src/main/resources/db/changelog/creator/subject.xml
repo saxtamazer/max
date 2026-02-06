@@ -13,7 +13,7 @@
             <column name="id" type="serial" autoIncrement="true">
                 <constraints nullable="false" unique="true" primaryKey="true"/>
             </column>
-            <column name="name" type="varchar(64)">
+            <column name="name" type="varchar(256)">
                 <constraints nullable="false"/>
             </column>
             <column name="type_id" type="int">
@@ -28,12 +28,6 @@
                                  baseColumnNames="type_id"
                                  constraintName="fk_subject_to_type_lesson"
                                  referencedTableName="type_lesson"
-                                 referencedColumnNames="id"/>
-
-        <addForeignKeyConstraint baseTableName="subject"
-                                 baseColumnNames="department_id"
-                                 constraintName="fk_subject_to_department"
-                                 referencedTableName="department"
                                  referencedColumnNames="id"/>
     </changeSet>
 </databaseChangeLog>

@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.repositoryservice;
 
 import com.example.demo.dao.SubjectRepository;
 import com.example.demo.dao.entities.SubjectModel;
@@ -15,14 +15,15 @@ public class SubjectService {
     private final SubjectRepository repository;
     private final SubjectModelToSubjectDTOConverter converter;
 
-    public Optional<SubjectDTO> create(String name, int typeId) {
-        if (!repository.existsById(typeId)) {
-            SubjectModel subject = new SubjectModel();
-            subject.setName(name);
-            subject.setTypeId(typeId);
-            return Optional.of(converter.convert(repository.save(subject)));
+    public SubjectDTO getOrCreate(String name, int typeId) {
+        Optional<SubjectDTO> subject = this.getSubjectByNameAndTypeId(name, typeId);
+        if (subject.isEmpty()) {
+            SubjectModel subjectModel = new SubjectModel();
+            subjectModel.setName(name);
+            subjectModel.setTypeId(typeId);
+            return converter.convert(repository.save(subjectModel));
         } else {
-            return Optional.empty();
+            return subject.get();
         }
     }
 
@@ -30,7 +31,7 @@ public class SubjectService {
         return converter.convert(repository.findById(id).get());  // add a check on present
     }
 
-    public Optional<SubjectDTO> findSubjectByName(String name) {
-        return repository.findByName(name).map(converter::convert);
+    public Optional<SubjectDTO> getSubjectByNameAndTypeId(String name, int typeId) {
+        return repository.findByNameAndTypeId(name, typeId).map(converter::convert);
     }
 }

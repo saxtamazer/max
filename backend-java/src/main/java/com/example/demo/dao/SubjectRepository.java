@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface SubjectRepository extends JpaRepository<SubjectModel, Integer> {
-    Optional<SubjectModel> findByName(String name);
+    Optional<SubjectModel> findByNameAndTypeId(String name, int typeId);
     boolean existsByName(String name);
 }

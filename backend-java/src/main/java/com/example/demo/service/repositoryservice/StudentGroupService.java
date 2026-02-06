@@ -1,11 +1,10 @@
-package com.example.demo.service;
+package com.example.demo.service.repositoryservice;
 
 import com.example.demo.dao.StudentGroupRepository;
 import com.example.demo.dao.entities.StudentGroupModel;
 import com.example.demo.service.converter.modeltodto.StudentGroupModelToStudentGroupDTOConverter;
 import com.example.demo.service.dto.StudentGroupDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -16,13 +15,14 @@ public class StudentGroupService {
     private final StudentGroupRepository repository;
     private final StudentGroupModelToStudentGroupDTOConverter converter;
 
-    public Optional<StudentGroupDTO> create(String name) {
-        if (!repository.existsByName(name)) {
+    public StudentGroupDTO getOrCreate(String name) {
+        Optional<StudentGroupDTO> studentGroup = this.getStudentGroupByName(name);
+        if (studentGroup.isEmpty()) {
             StudentGroupModel studentGroupModel = new StudentGroupModel();
             studentGroupModel.setName(name);
-            return Optional.of(converter.convert(repository.save(studentGroupModel)));
+            return converter.convert(repository.save(studentGroupModel));
         } else {
-            return Optional.empty();
+            return studentGroup.get();
         }
     }
 

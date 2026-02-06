@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.repositoryservice;
 
 import com.example.demo.dao.TypeLessonRepository;
 import com.example.demo.service.converter.modeltodto.TypeLessonModelToTypeLessonDTOConverter;

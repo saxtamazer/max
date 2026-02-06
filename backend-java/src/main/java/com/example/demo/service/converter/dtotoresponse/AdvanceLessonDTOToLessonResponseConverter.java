@@ -43,7 +43,7 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
     }
 
     private String formatAuditorium(AuditoriumDTO auditorium) {
-        return auditorium.getBlock() + "-" + auditorium.getNumber();
+        return auditorium.getBlock() + "-" + auditorium.getIdent();
     }
 
     private LocalDateTime handleTimeslot(LocalDateTime referenceDay, TimeslotDTO timeslot, LocalTime time) {

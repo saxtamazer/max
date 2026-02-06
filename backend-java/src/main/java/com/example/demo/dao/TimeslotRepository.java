@@ -9,5 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface TimeslotRepository extends JpaRepository<TimeslotModel, Integer> {
-    Optional<TimeslotModel> findByDayOfWeekAndStartTimeAndEven(int dayOfWeek, LocalTime startTime, boolean even);
+    Optional<TimeslotModel> findByDayOfWeekAndStartTimeAndEvenTrue(int dayOfWeek, LocalTime startTime);
+    Optional<TimeslotModel> findByDayOfWeekAndStartTimeAndEvenFalse(int dayOfWeek, LocalTime startTime);
 }

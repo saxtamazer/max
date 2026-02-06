@@ -19,9 +19,6 @@
             <column name="subject_id" type="int">
                 <constraints nullable="false"/>
             </column>
-            <column name="auditorium_id" type="int">
-                <constraints nullable="false"/>
-            </column>
             <column name="timeslot_id" type="int">
                 <constraints nullable="false"/>
             </column>
@@ -41,12 +38,6 @@
                                  baseColumnNames="subject_id"
                                  constraintName="fk_lesson_to_subject"
                                  referencedTableName="subject"
-                                 referencedColumnNames="id"/>
-
-        <addForeignKeyConstraint baseTableName="lesson"
-                                 baseColumnNames="auditorium_id"
-                                 constraintName="fk_lesson_to_auditorium"
-                                 referencedTableName="auditorium"
                                  referencedColumnNames="id"/>
 
         <addForeignKeyConstraint baseTableName="lesson"

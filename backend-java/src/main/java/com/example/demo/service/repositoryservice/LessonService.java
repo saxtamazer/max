@@ -1,17 +1,12 @@
-package com.example.demo.service;
+package com.example.demo.service.repositoryservice;
 
 import com.example.demo.dao.entities.AuditoriumModel;
 import com.example.demo.dao.entities.EducatorModel;
 import com.example.demo.dao.entities.LessonModel;
 import com.example.demo.dao.lesson.EvenFilter;
 import com.example.demo.dao.lesson.LessonRepository;
-import com.example.demo.service.converter.modeltodto.EducatorModelToEducatorDTOConverter;
 import com.example.demo.service.converter.modeltodto.LessonModelToLessonDTOConverter;
-import com.example.demo.service.converter.modeltodto.SubjectModelToSubjectDTOConverter;
-import com.example.demo.service.dto.AdvancedLessonDTO;
-import com.example.demo.service.dto.AuditoriumDTO;
-import com.example.demo.service.dto.EducatorDTO;
-import com.example.demo.service.dto.LessonDTO;
+import com.example.demo.service.dto.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -26,9 +21,8 @@ import java.util.List;
 public class LessonService {
     LessonRepository lessonRepository;
     LessonModelToLessonDTOConverter converter;
-    EducatorModelToEducatorDTOConverter educatorConverter;
-    SubjectModelToSubjectDTOConverter subjectConverter;
     StudentGroupService studentGroupService;
+    TypeLessonService typeLessonService;
     SubjectService subjectService;
     EducatorService educatorService;
     AuditoriumService auditoriumService;

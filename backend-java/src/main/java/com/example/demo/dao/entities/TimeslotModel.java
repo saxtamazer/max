@@ -18,7 +18,7 @@ public class TimeslotModel {
     private int id;
 
     @Column(name = "even", nullable = false)
-    private boolean isEven;
+    private boolean even;
 
     @Column(name = "day_of_week", nullable = false)
     private int dayOfWeek;

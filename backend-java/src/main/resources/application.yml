@@ -16,6 +16,9 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+  info:
+    build:
+      encoding: UTF-8
 storage:
   schedule-storage: src/main/resources/schedule/
   name-json-file: schedule.json

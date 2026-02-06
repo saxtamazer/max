@@ -20,7 +20,4 @@ public class SubjectModel {
 
     @Column(name = "type_id", nullable = false)
     private int typeId;
-
-    @Column(name = "department_id")
-    private int departmentId;
 }

@@ -16,8 +16,8 @@ public class AuditoriumModel {
     private int id;
 
     @Column(name = "block", nullable = false)
-    private int block;
+    private String block;
 
-    @Column(name = "number", nullable = false)
-    private int number;
+    @Column(name = "ident")
+    private String ident;
 }

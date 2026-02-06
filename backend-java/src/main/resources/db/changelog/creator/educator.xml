@@ -20,11 +20,5 @@
                 <constraints nullable="true"/>
             </column>
         </createTable>
-
-        <addForeignKeyConstraint baseTableName="educator"
-                                 baseColumnNames="department_id"
-                                 constraintName="fk_educator_to_department"
-                                 referencedTableName="department"
-                                 referencedColumnNames="id"/>
     </changeSet>
 </databaseChangeLog>

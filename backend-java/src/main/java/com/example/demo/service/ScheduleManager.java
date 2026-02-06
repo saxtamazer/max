@@ -4,9 +4,9 @@ import com.example.demo.api.json.LessonRequest;
 import com.example.demo.api.json.ScheduleResponse;
 import com.example.demo.configuration.ConfigProperties;
 import com.example.demo.dao.lesson.EvenFilter;
+import com.example.demo.service.repositoryservice.LessonService;
 import com.example.demo.service.converter.dtotoresponse.AdvanceLessonDTOToLessonResponseConverter;
-import com.example.demo.service.dto.AdvancedLessonDTO;
-import com.example.demo.service.dto.StudentGroupDTO;
+import com.example.demo.service.dto.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -15,8 +15,6 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.File;
-import java.io.IOException;
-import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.List;
 
@@ -26,8 +24,7 @@ import java.util.List;
 public class ScheduleManager {
     ConfigProperties configProperties;
     LessonService lessonService;
-    StudentGroupService studentGroupService;
-    TimeslotService timeslotService;
+    LessonApplicationService lessonApplicationService;
     AdvanceLessonDTOToLessonResponseConverter converter;
 
     public ScheduleResponse getScheduleByThisWeek() {
@@ -41,18 +38,17 @@ public class ScheduleManager {
 
     public void writeSchedule() {
         List<LessonRequest> schedule = extractSchedule();
-
-    }
-
-    private LocalTime handleStartTime(String jsonStartTime) {
-        String[] splitTime = jsonStartTime.split("\\.");
-        return LocalTime.of(Integer.parseInt(splitTime[0]), Integer.parseInt(splitTime[1]));
+        for (LessonRequest lessonRequest : schedule) {
+            lessonApplicationService.save(lessonRequest);
+        }
     }
 
     private List<LessonRequest> extractSchedule() {
         ObjectMapper objectMapper = new ObjectMapper();
         File jsonFile = new File(configProperties.getScheduleStorage() + "schedule.json");
-        List<LessonRequest> schedule = objectMapper.readValue(jsonFile, new TypeReference<List<LessonRequest>>() {});
+        List<LessonRequest> schedule = objectMapper.readValue(
+                jsonFile, new TypeReference<List<LessonRequest>>() {}
+        );
         return schedule;
     }
 
