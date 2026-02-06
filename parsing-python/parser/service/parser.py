@@ -46,38 +46,29 @@ def __extract_lesson(df, row_index, col_index): # выношу логику сб
     
 def __extract_data(data):
     type_pattern = r'^([^.]+)\.'
-    type_re = re.compile(type_pattern)
-    teacher_pattern = r'([А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ][а-яё\-]+)?\s+[А-ЯЁ]\.\s*[А-ЯЁ]\.)'
-    teacher_re = re.compile(teacher_pattern)
-    room_pattern = r'\b\d{1,2}-[А-ЯA-Z0-9Ёё\- ]+(?:\s*\([^)]+\))?|\bСК\b|\bКСК-\d+\b'
-    room_re = re.compile(room_pattern)
+    teacher_pattern = r'([А-ЯЁ][а-яёА-ЯЁ-]+\s+[А-ЯЁ]\.\s?[А-ЯЁ]\.)'
+    room_pattern = r'(\b\d{1,2}\s?-\s?[А-Яа-яЁё0-9\s\(\)\.]+(?=\s{2,}|\n|$|\s*[А-ЯЁ][а-яёА-ЯЁ-]+\s+[А-ЯЁ]\.)|\bСК\b)'
 
     cleaned_data = str(data).replace('\xa0', ' ').replace('\n', ' ').replace('\t', ' ').strip()
 
-    lesson_type = None
-    m = type_re.match(cleaned_data)
-    if m:
-        lesson_type = m.group(1)
-        cleaned_data = cleaned_data[m.end():].strip()
+    type_match = re.match(type_pattern, cleaned_data)
+    if type_match:
+        type = type_match.group(1).strip()
+        cleaned_data = cleaned_data[len(type) + 1:]
 
-    teacher_matches = list(teacher_re.finditer(cleaned_data))
-    teachers = [m.group(1) for m in teacher_matches]
+    teachers = re.findall(teacher_pattern, cleaned_data)
+    teachers = list(map(str.strip, teachers))
+    for t in teachers:
+        cleaned_data = cleaned_data.replace(t, "")
 
-    room_matches = list(room_re.finditer(cleaned_data))
-    rooms = [m.group(0).strip() for m in room_matches]
+    rooms = re.findall(room_pattern, cleaned_data)
+    rooms = list(map(str.strip, rooms))
+    for r in rooms:
+        cleaned_data = cleaned_data.replace(r, "")
 
-    cut_positions = []
+    subject = cleaned_data.strip()
 
-    if teacher_matches:
-        cut_positions.append(teacher_matches[0].start())
-
-    if room_matches:
-        cut_positions.append(room_matches[0].start())
-
-    subject_end = min(cut_positions) if cut_positions else len(cleaned_data)
-    subject = cleaned_data[:subject_end].strip()
-
-    return lesson_type, subject, teachers, rooms
+    return type, subject, teachers, rooms
 
 def __handle_merge_cells(work_sheet):
     merged_cells = list(work_sheet.merged_cells.ranges)

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LessonRepository extends JpaRepository<LessonModel, Integer>, LessonRepositoryCustom {
+    boolean existsByGroupIdAndTimeslotId(int groupId, int timeslotId);
 }
