@@ -3,7 +3,7 @@ package com.example.demo.service.repositoryservice;
 import com.example.demo.dao.TimeslotRepository;
 import com.example.demo.service.converter.modeltodto.TimeslotModelToTimeslotDTOConverter;
 import com.example.demo.service.dto.TimeslotDTO;
-import com.example.demo.service.tools.CustomDayOfWeek;
+import com.example.demo.utils.CustomDayOfWeek;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

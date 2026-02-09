@@ -23,14 +23,14 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
         response.setGroup(source.getGroup().getName());
         response.setSubject(formatSubject(source.getSubject()));
         response.setTeacher(
-                (String[]) Arrays.stream(source.getEducators())
+                Arrays.stream(source.getEducators())
                         .map(EducatorDTO::getFullName)
-                        .toArray()
+                        .toArray(String[]::new)
         );
         response.setRoom(
-                (String[]) Arrays.stream(source.getAuditoriums())
+                Arrays.stream(source.getAuditoriums())
                         .map(this::formatAuditorium)
-                        .toArray()
+                        .toArray(String[]::new)
         );
         response.setStartTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getStartTime()));
         response.setEndTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getEndTime()));

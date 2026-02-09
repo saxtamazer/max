@@ -3,7 +3,8 @@ package com.example.demo.service;
 import com.example.demo.api.json.LessonRequest;
 import com.example.demo.api.json.ScheduleResponse;
 import com.example.demo.configuration.ConfigProperties;
-import com.example.demo.dao.lesson.EvenFilter;
+import com.example.demo.utils.filter.EvenFilter;
+import com.example.demo.utils.filter.GroupFilter;
 import com.example.demo.service.repositoryservice.LessonService;
 import com.example.demo.service.converter.dtotoresponse.AdvanceLessonDTOToLessonResponseConverter;
 import com.example.demo.service.dto.*;
@@ -28,11 +29,20 @@ public class ScheduleManager {
     AdvanceLessonDTOToLessonResponseConverter converter;
 
     public ScheduleResponse getScheduleByThisWeek() {
-        EvenFilter evenFilter = getEvenFilter();
-        List<AdvancedLessonDTO> lessons = lessonService.getAllAdvancedLessonsByEven(evenFilter);
+        EvenFilter evenFilter = new EvenFilter(isEvenWeek());
+        List<AdvancedLessonDTO> lessons = lessonService.getAllAdvancedLessonsByFilter(evenFilter);
         ScheduleResponse scheduleResponse = new ScheduleResponse();
         scheduleResponse.setEvents(lessons.stream().map(converter::convert).toList());
         scheduleResponse.setCurrentWeekIsEven(evenFilter.isEven());
+        return scheduleResponse;
+    }
+
+    public ScheduleResponse getScheduleByGroup(String groupName) {
+        GroupFilter groupFilter = new GroupFilter(groupName);
+        List<AdvancedLessonDTO> lessons = lessonService.getAllAdvancedLessonsByFilter(groupFilter);
+        ScheduleResponse scheduleResponse = new ScheduleResponse();
+        scheduleResponse.setEvents(lessons.stream().map(converter::convert).toList());
+        scheduleResponse.setCurrentWeekIsEven(isEvenWeek());
         return scheduleResponse;
     }
 
@@ -52,8 +62,8 @@ public class ScheduleManager {
         return schedule;
     }
 
-    private EvenFilter getEvenFilter() {
+    private boolean isEvenWeek() {
         Calendar c = Calendar.getInstance();
-        return new EvenFilter(c.get(Calendar.WEEK_OF_MONTH) % 2 == 0);
+        return c.get(Calendar.WEEK_OF_MONTH) % 2 == 0;
     }
 }

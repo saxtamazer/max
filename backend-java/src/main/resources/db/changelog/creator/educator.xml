@@ -16,9 +16,6 @@
             <column name="full_name" type="varchar(64)">
                 <constraints nullable="false"/>
             </column>
-            <column name="department_id" type="int">
-                <constraints nullable="true"/>
-            </column>
         </createTable>
     </changeSet>
 </databaseChangeLog>

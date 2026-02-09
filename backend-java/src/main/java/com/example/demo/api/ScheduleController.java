@@ -2,10 +2,7 @@ package com.example.demo.api;
 
 import com.example.demo.service.ScheduleManager;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tools.jackson.databind.ObjectMapper;
 
 @RestController
@@ -20,5 +17,12 @@ public class ScheduleController {
         ObjectMapper om = new ObjectMapper();
 
         return om.writeValueAsString(scheduleManager.getScheduleByThisWeek());
+    }
+
+    @GetMapping("/view/{group}")
+    public String view(@PathVariable("group") String groupName) {
+        ObjectMapper om = new ObjectMapper();
+
+        return om.writeValueAsString(scheduleManager.getScheduleByGroup(groupName));
     }
 }

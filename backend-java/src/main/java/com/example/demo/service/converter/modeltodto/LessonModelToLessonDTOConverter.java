@@ -17,7 +17,7 @@ public class LessonModelToLessonDTOConverter implements Converter<LessonModel, L
                 new LessonDTO(
                         source.getId(),
                         source.getGroupId(),
-                        source.getGroupId(),
+                        source.getSubjectId(),
                         source.getEducators()
                                 .stream()
                                 .mapToInt(EducatorModel::getId)

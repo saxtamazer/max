@@ -1,4 +1,4 @@
-package com.example.demo.service.tools;
+package com.example.demo.utils;
 
 import lombok.AccessLevel;
 import lombok.Getter;

@@ -19,9 +19,6 @@
             <column name="type_id" type="int">
                 <constraints nullable="false"/>
             </column>
-            <column name="department_id" type="int">
-                <constraints nullable="true"/>
-            </column>
         </createTable>
 
         <addForeignKeyConstraint baseTableName="subject"

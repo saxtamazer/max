@@ -7,6 +7,7 @@ import com.example.demo.service.dto.AuditoriumDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,8 +28,14 @@ public class AuditoriumService {
         }
     }
 
-    public AuditoriumDTO getAuditoriumById(int id) {
-        return converter.convert(repository.findById(id).get());  // add a check on present
+    public Optional<AuditoriumDTO> getAuditoriumById(int id) {
+        return repository.findById(id).map(converter::convert);
+    }
+
+    public List<AuditoriumDTO> getAllAuditoriumByIds(List<Integer> ids) {
+        return repository.findAllById(ids).stream()
+                .map(converter::convert)
+                .toList();
     }
 
     public Optional<AuditoriumDTO> getAuditoriumByBlockAndIdent(String block, String ident) {

@@ -7,6 +7,7 @@ import com.example.demo.service.dto.EducatorDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,6 +29,12 @@ public class EducatorService {
 
     public Optional<EducatorDTO> getEducatorById(int id) {
         return repository.findById(id).map(converter::convert);
+    }
+
+    public List<EducatorDTO> getAllEducatorByIds(List<Integer> ids) {
+        return repository.findAllById(ids).stream()
+                .map(converter::convert)
+                .toList();
     }
 
     public Optional<EducatorDTO> getEducatorByFullName(String fullName) {

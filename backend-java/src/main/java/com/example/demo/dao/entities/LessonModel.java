@@ -5,7 +5,9 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "lesson")
@@ -35,7 +37,7 @@ public class LessonModel {
             joinColumns = @JoinColumn(name = "lesson_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "educator_id", referencedColumnName = "id")
     )
-    List<EducatorModel> educators = new ArrayList<>();
+    Set<EducatorModel> educators = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -43,7 +45,7 @@ public class LessonModel {
             joinColumns = @JoinColumn(name = "lesson_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "auditorium_id", referencedColumnName = "id")
     )
-    List<AuditoriumModel> auditoriums = new ArrayList<>();
+    Set<AuditoriumModel> auditoriums = new HashSet<>();
 
     public void addEducator(EducatorModel educator) {
         this.educators.add(educator);
