@@ -8,6 +8,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -23,8 +24,8 @@ public class ScheduleClientService {
     ConfigProperties configProperties;
     WebClient webClient;
 
-    public void sendFile() {
-        String filePath = configProperties.getScheduleStorage() + "shedule.xlsx";
+    public void sendScheduleFile(String fileName) {
+        String filePath = configProperties.getScheduleStorage() + fileName;
         File file = new File(filePath);
         FileSystemResource excel = new FileSystemResource(file);
 
@@ -39,9 +40,8 @@ public class ScheduleClientService {
                 .subscribe();
     }
 
-    public Mono<Void> saveFile(FilePart filePart) {
-        String nameJson = filePart.filename();
-        configProperties.setNameJsonFile(nameJson);
+    public Mono<Void> saveFile(FilePart filePart, String name) {
+        configProperties.setNameJsonFile(name);
         Path path = Paths.get(configProperties.getScheduleStorage() + configProperties.getNameJsonFile());
         return filePart.transferTo(path);
     }
