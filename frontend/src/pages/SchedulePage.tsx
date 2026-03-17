@@ -1,7 +1,7 @@
 // src/pages/SchedulePage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Container, Typography, CircularProgress, Box, Paper, Alert, Chip, Stack, TextField, Button } from '@mui/material';
+import { Container, Typography, CircularProgress, Box, Paper, Alert, Chip, Stack, TextField, Button, Autocomplete } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search'
 
 import FullCalendar from '@fullcalendar/react';
@@ -41,6 +41,7 @@ export const SchedulePage: React.FC = () => {
     const [isCurrentWeekEven, setIsCurrentWeekEven] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const[allGroups, setAllGroups] = useState<string[]>([]);
 
     const fetchSchedule = useCallback((targetGroup: string) => {
         if (!targetGroup.trim()) {
@@ -76,8 +77,9 @@ export const SchedulePage: React.FC = () => {
         }, [])
     
     useEffect(() => {
-        fetchSchedule(groupName)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        axios.get<string[]>('http://localhost:8081/api/v1/schedule/group')
+        .then(res => setAllGroups(res.data))
+        .catch(() => {});
     }, []); // Убрали зависимость, теперь загрузка идет один раз
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -98,23 +100,41 @@ export const SchedulePage: React.FC = () => {
                 Расписание занятий
             </Typography>
 
-            <Stack direction = "row" spacing={2} sx= {{mb: 3}} alignItems = "stretch">
-                <TextField
-                    label = "Название группы"
-                    variant = "outlined"
-                    value = {groupName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupName(e.target.value)}
-                    onKeyDown = {handleKeyDown}
+            <Stack direction="row" spacing={2} sx={{ mb: 3 }} alignItems="stretch">
+                <Autocomplete
+                    freeSolo                          // можно вводить вручную
+                    options={allGroups}
+                    value={groupName}
+                    onInputChange={(_, newValue) => setGroupName(newValue)}
+                    onChange={(_, newValue) => {
+                        if (newValue) {
+                            setGroupName(newValue);
+                            fetchSchedule(newValue);  // выбор из списка — сразу ищем
+                        }
+                    }}
+                    filterOptions={(options, { inputValue }) =>
+                        options
+                            .filter(o => o.toLowerCase().includes(inputValue.toLowerCase()))
+                            .slice(0, 5)              // показываем максимум 5
+                    }
                     fullWidth
-                    placeholder = "Например: ДА 01-24"
-                    size = "small"
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Название группы"
+                            variant="outlined"
+                            size="small"
+                            placeholder="Например: ДА 01-24"
+                            onKeyDown={handleKeyDown}
+                        />
+                    )}
                 />
                 <Button
-                    variant = "contained"
-                    onClick = {() => fetchSchedule(groupName)}
-                    startIcon = {<SearchIcon/>}
-                    disabled = {loading}
-                    sx = {{minWidth: '120px' }}
+                    variant="contained"
+                    onClick={() => fetchSchedule(groupName)}
+                    startIcon={<SearchIcon />}
+                    disabled={loading}
+                    sx={{ minWidth: '120px' }}
                 >
                     Найти
                 </Button>

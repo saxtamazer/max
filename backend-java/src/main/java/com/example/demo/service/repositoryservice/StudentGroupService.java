@@ -7,6 +7,7 @@ import com.example.demo.service.dto.StudentGroupDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,6 +25,10 @@ public class StudentGroupService {
         } else {
             return studentGroup.get();
         }
+    }
+
+    public List<String> getGroups() {
+        return repository.getGroupsName();
     }
 
     public StudentGroupDTO getStudentGroup(int id) {

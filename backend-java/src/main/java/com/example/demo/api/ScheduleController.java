@@ -1,9 +1,12 @@
 package com.example.demo.api;
 
 import com.example.demo.service.ScheduleManager;
+import com.example.demo.service.repositoryservice.StudentGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/schedule")
@@ -11,6 +14,12 @@ import tools.jackson.databind.ObjectMapper;
 @CrossOrigin(origins = "https://localhost:3000")
 public class ScheduleController {
     private final ScheduleManager scheduleManager;
+    private final StudentGroupService studentGroupService;
+
+    @GetMapping("/group")
+    public List<String> getGroups() {
+        return studentGroupService.getGroups();
+    }
 
     @GetMapping("/view")
     public String view() {
