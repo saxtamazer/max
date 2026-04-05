@@ -16,6 +16,7 @@ import { ProtectedRoute } from './components/admin/ProtectedRoute';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage'
 import { AdminLayout } from './layouts/AdminLayout'
 import { UploadPage } from './pages/admin/UploadPage'
+import { WorkloadPage } from './pages/admin/WorkloadPage'
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path = "/admin" element = { <AdminLayout/> }>
                 <Route path = "upload" element = { <UploadPage/> }/>
+                <Route> path = "workload", element = { <WorkloadPage/> } </Route>
               </Route>
             </Route>
           </Routes>

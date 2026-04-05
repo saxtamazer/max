@@ -1,8 +1,13 @@
 package com.example.demo.service.converter.dtotoresponse;
 
 import com.example.demo.api.json.LessonResponse;
+import com.example.demo.service.converter.TimeslotLocalTimeToLocalDateTimeConverter;
 import com.example.demo.service.dto.*;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -11,8 +16,12 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Optional;
 
-@Service
+@Component
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
 public class AdvanceLessonDTOToLessonResponseConverter implements Converter<AdvancedLessonDTO, LessonResponse> {
+    TimeslotLocalTimeToLocalDateTimeConverter timeConverter;
+
     @Override
     public LessonResponse convert(AdvancedLessonDTO source) {
         LessonResponse response = new LessonResponse();
@@ -32,8 +41,12 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
                         .map(this::formatAuditorium)
                         .toArray(String[]::new)
         );
-        response.setStartTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getStartTime()));
-        response.setEndTime(handleTimeslot(now, source.getTimeslot(), source.getTimeslot().getEndTime()));
+        response.setStartTime(timeConverter.convertWithDayOfWeek(
+                source.getTimeslot().getDayOfWeek(), source.getTimeslot().getStartTime())
+        );
+        response.setEndTime(timeConverter.convertWithDayOfWeek(
+                source.getTimeslot().getDayOfWeek(), source.getTimeslot().getEndTime())
+        );
         response.setWeekType(source.getTimeslot().isEven() ? "EVEN" : "ODD");
         return response;
     }
@@ -44,12 +57,5 @@ public class AdvanceLessonDTOToLessonResponseConverter implements Converter<Adva
 
     private String formatAuditorium(AuditoriumDTO auditorium) {
         return auditorium.getBlock() + "-" + auditorium.getIdent();
-    }
-
-    private LocalDateTime handleTimeslot(LocalDateTime referenceDay, TimeslotDTO timeslot, LocalTime time) {
-        return referenceDay
-                .with(DayOfWeek.of(timeslot.getDayOfWeek()))
-                .withHour(time.getHour())
-                .withMinute(time.getMinute());
     }
 }

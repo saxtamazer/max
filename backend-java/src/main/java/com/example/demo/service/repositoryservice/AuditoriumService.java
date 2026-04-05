@@ -41,4 +41,18 @@ public class AuditoriumService {
     public Optional<AuditoriumDTO> getAuditoriumByBlockAndIdent(String block, String ident) {
         return repository.getAuditoriumModelByBlockAndIdent(block, ident).map(converter::convert);
     }
+
+    public List<String> getUniqueAuditoriumNames() {
+        List<AuditoriumModel> auditoriums = repository.findAll();
+        return auditoriums.stream()
+                .map(a -> {
+                    StringBuilder format = new StringBuilder();
+                    format.append(a.getBlock());
+                    if (a.getIdent()!=null) {
+                        format.append("-").append(a.getIdent());
+                    }
+                    return format.toString();
+                })
+                .toList();
+    }
 }

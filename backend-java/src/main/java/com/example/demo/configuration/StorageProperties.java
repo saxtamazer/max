@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
-public class ConfigProperties {
+public class StorageProperties {
     String scheduleStorage;
     String nameJsonFile;
 }

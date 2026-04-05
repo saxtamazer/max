@@ -27,6 +27,10 @@ public class EducatorService {
         }
     }
 
+    public List<String> getUniqueEducatorFullNames() {
+        return repository.getUniqueFullNameEducator();
+    }
+
     public Optional<EducatorDTO> getEducatorById(int id) {
         return repository.findById(id).map(converter::convert);
     }

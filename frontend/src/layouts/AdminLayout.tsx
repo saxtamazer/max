@@ -9,9 +9,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     {
-        label: "Загрузка расписания",
-        path: "/admin/upload",
-        icon: "📂"
+      label: "Загрузка расписания",
+      path: "/admin/upload",
+      icon: "📂"
+    },
+    {
+      label: "Нагрузка",
+      path: "/admin/workload",
+      icon: "📊"
     }
 ];
 

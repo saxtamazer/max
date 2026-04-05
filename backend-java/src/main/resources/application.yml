@@ -22,3 +22,5 @@ spring:
 storage:
   schedule-storage: src/main/resources/schedule/
   name-json-file: schedule.json
+env:
+  pair-per-day: 6

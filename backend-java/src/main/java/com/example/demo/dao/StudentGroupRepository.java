@@ -14,5 +14,5 @@ public interface StudentGroupRepository extends JpaRepository<StudentGroupModel,
     boolean existsByName(String name);
 
     @Query("SELECT DISTINCT g.name FROM StudentGroupModel AS g")
-    public List<String> getGroupsName();
+    public List<String> getUniqueGroupsName();
 }

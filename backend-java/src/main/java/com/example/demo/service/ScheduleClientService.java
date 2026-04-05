@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.configuration.ConfigProperties;
+import com.example.demo.configuration.StorageProperties;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +8,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -21,11 +20,11 @@ import java.nio.file.Paths;
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class ScheduleClientService {
-    ConfigProperties configProperties;
+    StorageProperties storageProperties;
     WebClient webClient;
 
     public void sendScheduleFile(String fileName) {
-        String filePath = configProperties.getScheduleStorage() + fileName;
+        String filePath = storageProperties.getScheduleStorage() + fileName;
         File file = new File(filePath);
         FileSystemResource excel = new FileSystemResource(file);
 
@@ -41,8 +40,8 @@ public class ScheduleClientService {
     }
 
     public Mono<Void> saveFile(FilePart filePart, String name) {
-        configProperties.setNameJsonFile(name);
-        Path path = Paths.get(configProperties.getScheduleStorage() + configProperties.getNameJsonFile());
+        storageProperties.setNameJsonFile(name);
+        Path path = Paths.get(storageProperties.getScheduleStorage() + storageProperties.getNameJsonFile());
         return filePart.transferTo(path);
     }
 }

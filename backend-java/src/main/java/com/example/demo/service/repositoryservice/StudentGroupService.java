@@ -27,8 +27,16 @@ public class StudentGroupService {
         }
     }
 
+    public List<String> getAllStudentGroupName() {
+        List<StudentGroupModel> groups = repository.findAll();
+
+        return groups.stream()
+                .map(StudentGroupModel::getName)
+                .toList();
+    }
+
     public List<String> getGroups() {
-        return repository.getGroupsName();
+        return repository.getUniqueGroupsName();
     }
 
     public StudentGroupDTO getStudentGroup(int id) {

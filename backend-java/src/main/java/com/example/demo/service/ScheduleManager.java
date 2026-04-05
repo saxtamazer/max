@@ -2,7 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.api.json.LessonRequest;
 import com.example.demo.api.json.ScheduleResponse;
-import com.example.demo.configuration.ConfigProperties;
+import com.example.demo.configuration.StorageProperties;
 import com.example.demo.utils.filter.EvenFilter;
 import com.example.demo.utils.filter.GroupFilter;
 import com.example.demo.service.repositoryservice.LessonService;
@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class ScheduleManager {
-    ConfigProperties configProperties;
+    StorageProperties storageProperties;
     LessonService lessonService;
     LessonApplicationService lessonApplicationService;
     AdvanceLessonDTOToLessonResponseConverter converter;
@@ -55,7 +55,7 @@ public class ScheduleManager {
 
     private List<LessonRequest> extractSchedule() {
         ObjectMapper objectMapper = new ObjectMapper();
-        File jsonFile = new File(configProperties.getScheduleStorage() + "schedule.json");
+        File jsonFile = new File(storageProperties.getScheduleStorage() + "schedule.json");
         List<LessonRequest> schedule = objectMapper.readValue(
                 jsonFile, new TypeReference<List<LessonRequest>>() {}
         );
