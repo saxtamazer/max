@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <include file="creator/auditorium.xml" relativeToChangelogFile="true"/>
+    <include file="creator/department.xml" relativeToChangelogFile="true"/>
+    <include file="creator/educator.xml" relativeToChangelogFile="true"/>
+    <include file="creator/student_group.xml" relativeToChangelogFile="true"/>
+    <include file="creator/timeslot.xml" relativeToChangelogFile="true"/>
+    <include file="creator/type_lesson.xml" relativeToChangelogFile="true"/>
+    <include file="creator/subject.xml" relativeToChangelogFile="true"/>
+    <include file="creator/educator_subject.xml" relativeToChangelogFile="true"/>
+    <include file="creator/lesson.xml" relativeToChangelogFile="true"/>
+    <include file="creator/lesson_educator.xml" relativeToChangelogFile="true"/>
+    <include file="creator/lesson_auditorium.xml" relativeToChangelogFile="true"/>
+
+    <include file="filling_type_lesson_table.xml" relativeToChangelogFile="true"/>
+    <include file="filling_timeslot_table.xml" relativeToChangelogFile="true"/>
+</databaseChangeLog>

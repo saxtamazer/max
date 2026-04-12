@@ -1,7 +1,8 @@
 // src/pages/SchedulePage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Container, Typography, CircularProgress, Box, Paper, Alert, Chip } from '@mui/material';
+import { Container, Typography, CircularProgress, Box, Paper, Alert, Chip, Stack, TextField, Button, Autocomplete } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search'
 
 import FullCalendar from '@fullcalendar/react';
 import listPlugin from '@fullcalendar/list';
@@ -35,13 +36,23 @@ const WeekTypeChip: React.FC<{ weekType: 'EVEN' | 'ODD' | 'BOTH' }> = ({ weekTyp
 
 
 export const SchedulePage: React.FC = () => {
+    const[groupName, setGroupName] = useState('ДА 01-24')
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [isCurrentWeekEven, setIsCurrentWeekEven] = useState<boolean | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    
-    useEffect(() => {
-        axios.get<ScheduleResponse>('/api/v1/schedule/view/')
+    const[allGroups, setAllGroups] = useState<string[]>([]);
+
+    const fetchSchedule = useCallback((targetGroup: string) => {
+        if (!targetGroup.trim()) {
+            setError("Введите название группы")
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        axios.get<ScheduleResponse>(`http://localhost:8081/api/v1/schedule/view/${targetGroup}`)
             .then(response => {
                 const { events: rawEvents, current_week_is_even } = response.data;
                 
@@ -60,17 +71,21 @@ export const SchedulePage: React.FC = () => {
             })
             .catch(err => {
                 console.error("Error fetching public schedule!", err);
-                setError("Не удалось загрузить расписание. Попробуйте позже.");
+                setError("Не удалось загрузить расписание. Проверьте название группы или попробуйте позже.");
             })
             .finally(() => setLoading(false));
+        }, [])
+    
+    useEffect(() => {
+        axios.get<string[]>('http://localhost:8081/api/v1/schedule/group')
+        .then(res => setAllGroups(res.data))
+        .catch(() => {});
     }, []); // Убрали зависимость, теперь загрузка идет один раз
 
-    if (loading) {
-        return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
-    }
-
-    if (error) {
-        return <Container maxWidth="md" sx={{ py: 4 }}><Alert severity="error">{error}</Alert></Container>;
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            fetchSchedule(groupName);
+        }
     }
 
     return (
@@ -84,11 +99,64 @@ export const SchedulePage: React.FC = () => {
             >
                 Расписание занятий
             </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-                Текущая неделя: {isCurrentWeekEven === null ? '...' : (isCurrentWeekEven ? <b>Четная</b> : <b>Нечетная</b>)}. 
-                События другой недели отображаются бледнее.
-            </Typography>
-            <Paper elevation={2} sx={{ p: { xs: 1, sm: 2 } }}>
+
+            <Stack direction="row" spacing={2} sx={{ mb: 3 }} alignItems="stretch">
+                <Autocomplete
+                    freeSolo                          // можно вводить вручную
+                    options={allGroups}
+                    value={groupName}
+                    onInputChange={(_, newValue) => setGroupName(newValue)}
+                    onChange={(_, newValue) => {
+                        if (newValue) {
+                            setGroupName(newValue);
+                            fetchSchedule(newValue);  // выбор из списка — сразу ищем
+                        }
+                    }}
+                    filterOptions={(options, { inputValue }) =>
+                        options
+                            .filter(o => o.toLowerCase().includes(inputValue.toLowerCase()))
+                            .slice(0, 5)              // показываем максимум 5
+                    }
+                    fullWidth
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Название группы"
+                            variant="outlined"
+                            size="small"
+                            placeholder="Например: ДА 01-24"
+                            onKeyDown={handleKeyDown}
+                        />
+                    )}
+                />
+                <Button
+                    variant="contained"
+                    onClick={() => fetchSchedule(groupName)}
+                    startIcon={<SearchIcon />}
+                    disabled={loading}
+                    sx={{ minWidth: '120px' }}
+                >
+                    Найти
+                </Button>
+            </Stack>
+            
+            {isCurrentWeekEven !== null && !loading && !error && (
+                <Typography variant="body2" color="text.secondary" paragraph>
+                    Текущая неделя: {isCurrentWeekEven === null ? '...' : (isCurrentWeekEven ? <b>Четная</b> : <b>Нечетная</b>)}. 
+                    События другой недели отображаются бледнее.
+                </Typography>
+            )}
+
+            {loading && 
+                <Box display = "flex" justifyContent="center" mt={4}>
+                    <CircularProgress/>
+                </Box>
+            }
+
+            {error && <Alert severity="error" sx={{mb:2}}>{error}</Alert>}
+
+
+            {!loading && <Paper elevation={2} sx={{ p: { xs: 1, sm: 2 } }}>
                 <FullCalendar
                     plugins={[listPlugin]}
                     initialView="listWeek"
@@ -109,10 +177,14 @@ export const SchedulePage: React.FC = () => {
                                          (isCurrentWeekEven && eventWeekType === 'EVEN') || 
                                          (!isCurrentWeekEven && eventWeekType === 'ODD');
 
+                        const teachers = (eventInfo.event.extendedProps.teacher as string[]) || [];
+                        const rooms = (eventInfo.event.extendedProps.room as string[]) || [];
+                        const maxLength = Math.max(teachers.length, rooms.length)
+                        
+
                         const calendarEvent = {
                             title: eventInfo.event.title,
-                            description: `Преподаватель: ${eventInfo.event.extendedProps.teacher}`,
-                            location: `Аудитория: ${eventInfo.event.extendedProps.room}`,
+                            description: `${teachers} ${rooms}`,
                             start: new Date(eventInfo.event.start),
                             end: new Date(eventInfo.event.end),
                         };
@@ -133,19 +205,49 @@ export const SchedulePage: React.FC = () => {
                                         </Typography>
                                         <WeekTypeChip weekType={eventWeekType} />
                                     </Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                                        {eventInfo.event.extendedProps.teacher as string}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                                        Аудитория: {eventInfo.event.extendedProps.room as string}
-                                    </Typography>
+                                    <Box sx = {{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 0.5
+                                    }}>
+                                        {
+                                            Array.from({length: maxLength}).map((_, index) => {
+                                                const teacher = teachers[index] || '';
+                                                const room = rooms[index] || '';
+
+                                                if (!teacher && !room) return null;
+
+                                                return (
+                                                    <Box key = {index} sx = {{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: '1fr auto',
+                                                        width: '300px',
+                                                        gap: 2,
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <Typography variant="body2" color="text.secondary" 
+                                                        sx={{
+                                                            fontSize: { xs: '0.75rem', sm: '0.875rem' } 
+                                                        }}>
+                                                            {teacher}
+                                                        </Typography>
+                                                       {room && (<Typography variant="body2" color="text.secondary" 
+                                                       sx={{ 
+                                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }, 
+                                                            whiteSpace: 'nowrap' 
+                                                        }}> {room}
+                                                        </Typography>)}
+                                                    </Box>
+                                                );
+                                            })}                                        
+                                    </Box>
                                 </Box>
                                 <AddToCalendar event={calendarEvent} />
                             </Box>
                         );
                     }}
                 />
-            </Paper>
+            </Paper>}
         </Container>
     );
 };

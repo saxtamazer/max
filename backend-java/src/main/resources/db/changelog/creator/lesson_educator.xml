@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="create_lesson_educator" author="kolmi (generated)">
+        <createTable tableName="lesson_educator">
+            <column name="lesson_id" type = "int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="educator_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="lesson_educator"
+                                 baseColumnNames="lesson_id"
+                                 constraintName="fk_lesson_educator_to_lesson"
+                                 referencedTableName="lesson"
+                                 referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="lesson_educator"
+                                 baseColumnNames="educator_id"
+                                 constraintName="fk_lesson_educator_to_educator"
+                                 referencedTableName="educator"
+                                 referencedColumnNames="id"/>
+
+        <addPrimaryKey tableName="lesson_educator"
+                       columnNames="lesson_id, educator_id"/>
+    </changeSet>
+</databaseChangeLog>
