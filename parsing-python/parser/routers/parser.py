@@ -8,7 +8,7 @@ parser = APIRouter()
 def parsing_xlsx(file: UploadFile):
     json_path = ParserService.parsing(file.file)
 
-    url = "http://localhost:8081/api/v1/parser/read"
+    url = "http://localhost:8081/api/v1/parser/schedule"
 
     with open(json_path, "rb") as json_file:
         files = {
