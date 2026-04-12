@@ -44,7 +44,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path = "/admin" element = { <AdminLayout/> }>
                 <Route path = "upload" element = { <UploadPage/> }/>
-                <Route> path = "workload", element = { <WorkloadPage/> } </Route>
+                <Route path = "workload" element = { <WorkloadPage/> }/>
               </Route>
             </Route>
           </Routes>

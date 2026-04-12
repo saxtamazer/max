@@ -34,7 +34,7 @@ public class ParserController {
                 .then(Mono.just(ResponseEntity.ok(file.filename())));
     }
 
-    @PostMapping(value = "read")
+    @PostMapping(value = "schedule")
     public Mono<ResponseEntity<String>> read(@RequestPart("file") Flux<FilePart> files) {
         return files
                 .flatMap(file -> scheduleClientService.saveFile(file, dataGenerator.createExcelFileName(file, "schedule")))
